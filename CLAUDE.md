@@ -77,6 +77,7 @@ Edit `/src/lib/field-config.ts` to move fields between mandatory/optional arrays
 - Color-coded environment badges (green=dev, blue=int, yellow=test, red=prod)
 - Dynamic database connections that update automatically
 - Each environment has isolated database configuration
+- Configurable SSL/TLS encryption and certificate validation per environment
 
 ## Status Management
 - Toggle user status between Active/Inactive with single click

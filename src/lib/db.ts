@@ -26,8 +26,8 @@ function getDbConfig(): mssql.config {
         server: config.server.split(',')[0],
         port: parseInt(config.server.split(',')[1]) || 1433,
         options: {
-            encrypt: false,
-            trustServerCertificate: true
+            encrypt: config.encrypt !== undefined ? config.encrypt : false,
+            trustServerCertificate: config.trustServerCertificate !== undefined ? config.trustServerCertificate : true
         }
     };
 }

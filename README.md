@@ -38,28 +38,36 @@ Professional user management system with SQL Server 2019 integration and multi-e
          "username": "your_username",
          "password": "your_password",
          "database": "your_dev_database",
-         "server": "localhost,1433"
+         "server": "localhost,1433",
+         "encrypt": false,
+         "trustServerCertificate": true
        },
        "int": {
          "name": "Integration", 
          "username": "your_username",
          "password": "your_password",
          "database": "your_int_database",
-         "server": "int-server,1433"
+         "server": "int-server,1433",
+         "encrypt": true,
+         "trustServerCertificate": false
        },
        "test": {
          "name": "Testing",
          "username": "your_username", 
          "password": "your_password",
          "database": "your_test_database",
-         "server": "test-server,1433"
+         "server": "test-server,1433",
+         "encrypt": true,
+         "trustServerCertificate": false
        },
        "prod": {
          "name": "Production",
          "username": "your_username",
          "password": "your_password", 
          "database": "your_prod_database",
-         "server": "prod-server,1433"
+         "server": "prod-server,1433",
+         "encrypt": true,
+         "trustServerCertificate": false
        }
      }
    }
@@ -89,6 +97,12 @@ The application supports multiple environments through the navigation bar enviro
 - **Production (PROD)** - Red badge
 
 Switch environments using the database icon in the navigation header. Each environment connects to its own database as configured in `connection.json`.
+
+### Connection Security Options
+Each environment supports SSL/TLS configuration:
+- **`encrypt`**: Enable/disable connection encryption (true/false)
+- **`trustServerCertificate`**: Trust self-signed certificates (true/false)
+- **Recommended**: Use `encrypt: true, trustServerCertificate: false` for production
 
 ### Status Management
 Users can toggle status between Active and Inactive directly from the user table:

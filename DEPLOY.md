@@ -72,18 +72,28 @@ cd admin-portal
          "username": "your_prod_username",
          "password": "your_prod_password",
          "database": "admin_portal_prod",
-         "server": "your_sql_server,1433"
+         "server": "your_sql_server,1433",
+         "encrypt": true,
+         "trustServerCertificate": false
        },
        "dev": {
          "name": "Development",
          "username": "your_dev_username", 
          "password": "your_dev_password",
          "database": "admin_portal_dev",
-         "server": "your_sql_server,1433"
+         "server": "your_sql_server,1433",
+         "encrypt": false,
+         "trustServerCertificate": true
        }
      }
    }
    ```
+
+   **Security Configuration Options:**
+   - **`encrypt: true`** - Enables SSL/TLS encryption (recommended for production)
+   - **`encrypt: false`** - Disables encryption (acceptable for local development)
+   - **`trustServerCertificate: false`** - Validates SSL certificates (recommended for production)
+   - **`trustServerCertificate: true`** - Accepts self-signed certificates (development only)
 
 4. Build the application:
    ```cmd
