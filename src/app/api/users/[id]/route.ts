@@ -2,6 +2,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase, sql } from '@/lib/db';
 import { fieldConfig } from '@/lib/field-config';
 
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const params = await context.params;
+    const userKey = parseInt(params.id);
+    
+    if (isNaN(userKey)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID' },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+    
+    const query = `SELECT * FROM USERS WHERE USER_KEY = @userKey`;
+    const sqlRequest = new sql.Request();
+    sqlRequest.input('userKey', userKey);
+    
+    const result = await sqlRequest.query(query);
+    
+    if (result.recordset.length === 0) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(result.recordset[0]);
+    
+  } catch (error) {
+    console.error('Database error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch user: ' + (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }

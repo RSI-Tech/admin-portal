@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Users, User, CheckCircle } from "lucide-react";
@@ -15,26 +15,14 @@ interface UserProfilesProps {
   userKey?: number;
   onProfilesChange: (profiles: string[]) => void;
   updatedBy: string;
+  initialProfiles?: string[];
 }
 
-export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfilesProps) {
+export function UserProfiles({ userKey, onProfilesChange, updatedBy, initialProfiles }: UserProfilesProps) {
   const [currentProfiles, setCurrentProfiles] = useState<UserProfile[]>([]);
   const [availableProfiles, setAvailableProfiles] = useState<string[]>([]);
   const [selectedNewProfile, setSelectedNewProfile] = useState<string>("");
   const [loading, setLoading] = useState(false);
-
-  // Fetch available profiles and current user profiles
-  useEffect(() => {
-    fetchAvailableProfiles();
-    if (userKey) {
-      fetchUserProfiles();
-    }
-  }, [userKey]);
-
-  // Notify parent of initial profiles when they load
-  useEffect(() => {
-    onProfilesChange(currentProfiles.map(p => p.PROFILE_ID));
-  }, [currentProfiles]);
 
   const fetchAvailableProfiles = async () => {
     try {
@@ -48,7 +36,7 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfi
     }
   };
 
-  const fetchUserProfiles = async () => {
+  const fetchUserProfiles = useCallback(async () => {
     if (!userKey) return;
     
     try {
@@ -60,7 +48,42 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfi
     } catch (error) {
       console.error('Failed to fetch user profiles:', error);
     }
-  };
+  }, [userKey]);
+
+  // Handle initial profiles for duplicate mode
+  useEffect(() => {
+    if (initialProfiles && initialProfiles.length > 0) {
+      const profilesData = initialProfiles.map(profileId => ({
+        PROFILE_ID: profileId,
+        UPDATED_DATE: new Date().toISOString(),
+        UPDATED_BY: updatedBy
+      }));
+      setCurrentProfiles(profilesData);
+    }
+  }, [initialProfiles, updatedBy]);
+
+  // Fetch available profiles and current user profiles
+  useEffect(() => {
+    fetchAvailableProfiles();
+    if (userKey && !initialProfiles) {
+      fetchUserProfiles();
+    }
+  }, [userKey, initialProfiles, fetchUserProfiles]);
+
+  // Notify parent only on initial load and user actions (not on every currentProfiles change)
+  useEffect(() => {
+    // Only notify on initial load from fetch or initialProfiles
+    if (initialProfiles && initialProfiles.length > 0) {
+      onProfilesChange(initialProfiles);
+    }
+  }, [initialProfiles, onProfilesChange]);
+
+  useEffect(() => {
+    // Only notify when profiles are loaded from API (not initialProfiles)
+    if (userKey && !initialProfiles && currentProfiles.length > 0) {
+      onProfilesChange(currentProfiles.map(p => p.PROFILE_ID));
+    }
+  }, [userKey, initialProfiles, currentProfiles, onProfilesChange]);
 
   const addProfile = () => {
     if (!selectedNewProfile) return;

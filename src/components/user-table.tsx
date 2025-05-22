@@ -1,4 +1,4 @@
-import { Edit, Mail, UserPlus, X } from 'lucide-react';
+import { Edit, Mail, UserPlus, X, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -134,6 +134,11 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
     }
   };
 
+  const handleDuplicateUser = async (userKey: number) => {
+    // Redirect directly to duplicate form with original user ID
+    window.location.href = `/duplicate-user/${userKey}`;
+  };
+
   const handleRowClick = (user: User, event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest('input[type="checkbox"], a, button')) {
       return;
@@ -172,7 +177,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
       <div className="relative overflow-auto shadow-sm rounded-2xl border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 bg-white/90 backdrop-blur-md">
-            <tr className="grid grid-cols-[8ch_32ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4">
+            <tr className="grid grid-cols-[8ch_32ch_1fr_2fr_8ch_12ch] gap-4 px-6 py-4">
               <th className="text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 <div className="flex items-center">
                   {toggleAll && (
@@ -208,7 +213,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
             <tr 
               key={user.USER_KEY} 
               className={cn(
-                "grid grid-cols-[8ch_32ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
+                "grid grid-cols-[8ch_32ch_1fr_2fr_8ch_12ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
                 index % 2 === 1 ? 'odd:bg-gray-50' : ''
               )}
               onClick={(e) => handleRowClick(user, e)}
@@ -254,7 +259,23 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
               <td className="flex items-center">
                 <StatusToggle user={user} onStatusChange={handleStatusChange} />
               </td>
-              <td className="flex items-center justify-end">
+              <td className="flex items-center justify-end gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateUser(user.USER_KEY);
+                      }}
+                      className="inline-flex items-center p-2 text-sm font-medium rounded-lg text-green-600 bg-green-50 hover:bg-green-100 transition-colors duration-150"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Duplicate user</p>
+                  </TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link 

@@ -39,9 +39,25 @@ export async function POST(request: NextRequest) {
     fields.push('UPDATED_DATE', 'EFFECTIVE_BEGIN_DT', 'PASSWORD_CHANGED_DATE');
     values.push('GETDATE()', 'GETDATE()', 'GETDATE()');
     
-    // Add default values
-    fields.push('CASE_QUEUE_MAX', 'RESTRICT_CASE_CREATION', 'PPA_CASE_AMT_LIMIT', 'PPA_DURATION_LIMIT', 'CORE', 'LOGGED_IN_FLAG', 'OVERRIDE_PROHIBIT_FLAG', 'IGNORE_LOGIN_DATE', 'ENABLE_MFA');
-    values.push('0', "'N'", '25000', '24', '4', "'N'", "'N'", "'N'", "'Y'");
+    // Add default values for fields that weren't provided
+    const defaultFields = [
+      { name: 'CASE_QUEUE_MAX', value: '0' },
+      { name: 'RESTRICT_CASE_CREATION', value: "'N'" },
+      { name: 'PPA_CASE_AMT_LIMIT', value: '25000' },
+      { name: 'PPA_DURATION_LIMIT', value: '24' },
+      { name: 'CORE', value: '4' },
+      { name: 'LOGGED_IN_FLAG', value: "'N'" },
+      { name: 'OVERRIDE_PROHIBIT_FLAG', value: "'N'" },
+      { name: 'IGNORE_LOGIN_DATE', value: "'N'" },
+      { name: 'ENABLE_MFA', value: "'Y'" }
+    ];
+
+    defaultFields.forEach(defaultField => {
+      if (!fields.includes(defaultField.name)) {
+        fields.push(defaultField.name);
+        values.push(defaultField.value);
+      }
+    });
     
     const query = `
       INSERT INTO USERS (${fields.join(', ')}) 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { fieldConfig, FieldConfig, FieldOption } from "@/lib/field-config";
 import { UserProfiles } from "@/components/user-profiles";
-import { Save, X, AlertCircle, Info } from "lucide-react";
+import { Save, X, AlertCircle, Info, Copy } from "lucide-react";
 
 interface UserFormProps {
   initialData?: Record<string, any>;
   isEdit?: boolean;
+  mode?: 'add' | 'edit' | 'duplicate';
+  userKey?: number;
 }
 
-export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
+export function UserForm({ initialData = {}, isEdit = false, mode = 'add', userKey }: UserFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,6 +26,57 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
   const [submitError, setSubmitError] = useState<string>("");
   const [showOptional, setShowOptional] = useState(false);
   const [userProfiles, setUserProfiles] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(mode === 'duplicate');
+
+  const handleProfilesChange = useCallback((profiles: string[]) => {
+    setUserProfiles(profiles);
+  }, []);
+
+  // Fetch user data for duplicate mode
+  useEffect(() => {
+    if (mode === 'duplicate' && userKey) {
+      const fetchUserData = async () => {
+        try {
+          // Fetch user data
+          const userResponse = await fetch(`/api/users/${userKey}`);
+          if (!userResponse.ok) {
+            throw new Error('Failed to fetch user data');
+          }
+          const userData = await userResponse.json();
+          
+          // Fetch user profiles
+          const profilesResponse = await fetch(`/api/users/${userKey}/profiles`);
+          let originalProfiles: string[] = [];
+          if (profilesResponse.ok) {
+            const profilesData = await profilesResponse.json();
+            // Extract just the PROFILE_ID from each profile object
+            originalProfiles = (profilesData.profiles || []).map((p: any) => p.PROFILE_ID);
+          }
+          
+          // Clear fields that should be unique for the new user
+          const cleanedData = { ...userData };
+          delete cleanedData.USER_KEY;
+          delete cleanedData.UPDATED_DATE;
+          delete cleanedData.EFFECTIVE_BEGIN_DT;
+          delete cleanedData.PASSWORD_CHANGED_DATE;
+          
+          // Clear USER_ID to force user to enter a new one
+          cleanedData.USER_ID = '';
+          
+          setFormData(cleanedData);
+          setUserProfiles(originalProfiles); // Set the profiles to be copied
+          setShowOptional(true); // Show optional fields since we have data to display
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setSubmitError('Failed to load user data for duplication');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchUserData();
+    }
+  }, [mode, userKey]);
 
   const handleInputChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -56,8 +109,9 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
     setSubmitError("");
 
     try {
+      // For duplicate mode, always use POST to create a new user
       const url = isEdit ? `/api/users/${initialData.USER_KEY}` : "/api/users";
-      const method = isEdit ? "PUT" : "POST";
+      const method = (isEdit && mode !== 'duplicate') ? "PUT" : "POST";
       
       const response = await fetch(url, {
         method,
@@ -74,16 +128,16 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
 
       const result = await response.json();
       
-      // If this is a new user, we need to get the USER_KEY to update profiles
-      let userKey = initialData.USER_KEY;
-      if (!isEdit && result.userKey) {
-        userKey = result.userKey;
+      // If this is a new user or duplicate, we need to get the USER_KEY to update profiles
+      let targetUserKey = initialData.USER_KEY;
+      if ((!isEdit || mode === 'duplicate') && result.userKey) {
+        targetUserKey = result.userKey;
       }
 
       // Update user profiles if we have a userKey
-      if (userKey) {
+      if (targetUserKey) {
         try {
-          const profileResponse = await fetch(`/api/users/${userKey}/profiles`, {
+          const profileResponse = await fetch(`/api/users/${targetUserKey}/profiles`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -106,7 +160,9 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
       }
 
       router.push("/?success=" + encodeURIComponent(
-        isEdit ? "User updated successfully" : "User added successfully"
+        isEdit ? "User updated successfully" : 
+        mode === 'duplicate' ? "User duplicated successfully" : 
+        "User added successfully"
       ));
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "An error occurred");
@@ -178,6 +234,17 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl">
+        <div className="bg-white shadow-lg rounded-xl p-8 border border-gray-100 text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading user data for duplication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -236,10 +303,21 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
 
         {/* User Profiles Section */}
         <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
+          {mode === 'duplicate' && userProfiles.length > 0 && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700">
+                <Copy className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {userProfiles.length} profile{userProfiles.length !== 1 ? 's' : ''} copied from original user
+                </span>
+              </div>
+            </div>
+          )}
           <UserProfiles
-            userKey={isEdit ? initialData.USER_KEY : undefined}
-            onProfilesChange={setUserProfiles}
+            userKey={isEdit && mode !== 'duplicate' ? initialData.USER_KEY : undefined}
+            onProfilesChange={handleProfilesChange}
             updatedBy={formData.UPDATED_BY || formData.USER_ID || "SYSTEM"}
+            initialProfiles={mode === 'duplicate' ? userProfiles : undefined}
           />
         </div>
 
@@ -262,8 +340,8 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
           >
             <Save className="w-4 h-4 mr-2" />
             {isSubmitting
-              ? (isEdit ? "Updating..." : "Adding...")
-              : (isEdit ? "Update User" : "Add User")
+              ? (isEdit ? "Updating..." : mode === 'duplicate' ? "Duplicating..." : "Adding...")
+              : (isEdit ? "Update User" : mode === 'duplicate' ? "Duplicate User" : "Add User")
             }
           </Button>
         </div>
