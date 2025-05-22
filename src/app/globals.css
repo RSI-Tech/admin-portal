@@ -110,7 +110,7 @@
   
   /* Small text */
   .text-sm {
-    @apply text-sm leading-5;
+    @apply leading-5;
   }
   
   /* Professional table styling */
