@@ -5,6 +5,8 @@ Professional user management system for RSI built with Next.js 14, TypeScript, a
 
 ## Key Features
 - User management with CRUD operations
+- Interactive status toggle functionality (Active/Inactive)
+- Multi-environment support (dev, int, test, prod)
 - Profile assignment system (USER_TO_PROFILE table)
 - Configurable mandatory/optional fields
 - Professional UI with shadcn/ui components
@@ -16,8 +18,10 @@ Professional user management system for RSI built with Next.js 14, TypeScript, a
 
 ## Important Files
 - `/src/lib/field-config.ts` - Field configuration (mandatory/optional)
-- `/src/lib/db.ts` - Database connection
-- `/connection.json` - SQL Server credentials (gitignored)
+- `/src/lib/db.ts` - Dynamic database connection with environment support
+- `/src/components/environment-selector.tsx` - Environment switching UI
+- `/src/app/api/environment/` - Environment management API
+- `/connection.json` - Multi-environment SQL Server configuration (gitignored)
 
 ## Commands
 - `npm run dev` - Start development server
@@ -52,9 +56,13 @@ Edit `/src/lib/field-config.ts` to move fields between mandatory/optional arrays
 - Responsive design
 
 ## Recent Enhancements
+- Interactive status toggle switches for Active/Inactive user management
+- Multi-environment database switching with visual indicators
 - Professional user profiles UI with gradients and animations
 - Native dropdown styling for better cross-browser compatibility
-- Enhanced table design with alternating rows
+- Enhanced table design with alternating rows and USER_KEY column
+- Dynamic database connections that update when environments change
+- Environment selector in navigation with color-coded badges
 - Improved form validation and error states
 
 ## Git information
@@ -63,3 +71,15 @@ Edit `/src/lib/field-config.ts` to move fields between mandatory/optional arrays
 - repo: https://github.com/RSI-Tech/admin-portal
 - No mention of any AI or claude
 
+## Environment Management
+- Supports multiple environments: dev, int, test, prod
+- Environment switching via navigation header selector
+- Color-coded environment badges (green=dev, blue=int, yellow=test, red=prod)
+- Dynamic database connections that update automatically
+- Each environment has isolated database configuration
+
+## Status Management
+- Toggle user status between Active/Inactive with single click
+- Real-time database updates via API endpoints
+- Visual feedback with green/gray toggle switches
+- Optimistic UI updates with error handling
