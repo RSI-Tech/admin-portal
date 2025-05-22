@@ -6,6 +6,8 @@ Professional user management system with SQL Server 2019 integration and multi-e
 
 - **User Management**: Complete CRUD operations for user accounts
 - **Interactive Status Toggle**: One-click status switching between Active/Inactive
+- **User Migration**: Migrate users between environments with profile preservation
+- **User Duplication**: Duplicate existing users with customizable profile assignment
 - **Multi-Environment Support**: Switch between dev, integration, test, and production environments
 - **Profile Assignment**: Assign and manage user profiles through USER_TO_PROFILE table
 - **Field Configuration**: Configurable mandatory/optional fields system
@@ -135,6 +137,23 @@ Users can toggle status between Active and Inactive directly from the user table
 - Changes are immediately saved to the database
 - Visual feedback shows current status (green = active, gray = inactive)
 
+### User Migration
+Migrate users between environments while preserving all data and profiles:
+- Click the purple migration button (↔️) next to any user
+- Select target environment from dropdown
+- All user data is copied except USER_KEY (new key auto-generated)
+- All associated profiles from USER_TO_PROFILE table are migrated
+- Prevents duplicate USER_ID conflicts in target environment
+- Transaction-safe operation with automatic rollback on errors
+- Success confirmation with new USER_KEY and migrated profile count
+
+### User Duplication
+Create copies of existing users with customizable profiles:
+- Click the green duplicate button next to any user
+- Modify user details as needed
+- Select which profiles to copy to the new user
+- Original user remains unchanged
+
 ## Database Tables
 
 - **USERS**: Main user information table (86+ columns)
@@ -148,7 +167,11 @@ src/
 │   ├── api/               # API routes
 │   │   ├── environment/   # Environment switching
 │   │   └── users/         # User management APIs
+│   │       ├── [id]/
+│   │       │   ├── migrate/   # User migration endpoint
+│   │       │   └── profiles/  # Profile management
 │   ├── add-user/          # Add user page
+│   ├── duplicate-user/    # User duplication pages
 │   └── edit-user/         # Edit user pages
 ├── components/            # React components
 │   ├── ui/               # shadcn/ui components
@@ -156,7 +179,8 @@ src/
 │   ├── navigation.tsx    # Main navigation header
 │   ├── user-directory.tsx # Main user listing
 │   ├── user-form.tsx     # User creation/editing form
-│   └── user-table.tsx    # User data table with status toggle
+│   ├── user-migration.tsx # User migration component
+│   └── user-table.tsx    # User data table with actions
 └── lib/                   # Utility functions
     ├── db.ts             # Dynamic database connection
     ├── field-config.ts   # Field configuration

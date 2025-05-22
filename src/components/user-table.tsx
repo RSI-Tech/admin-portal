@@ -1,4 +1,4 @@
-import { Edit, Mail, UserPlus, X, Copy } from 'lucide-react';
+import { Edit, Mail, UserPlus, X, Copy, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { UserMigration } from './user-migration';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -94,11 +95,32 @@ function getStatusBadge(status?: string) {
 export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSelected, onUserStatusChange }: UserTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isMigrationSheetOpen, setIsMigrationSheetOpen] = useState(false);
   const [localUsers, setLocalUsers] = useState(users);
+  const [currentEnvironment, setCurrentEnvironment] = useState('');
+  const [availableEnvironments, setAvailableEnvironments] = useState<string[]>([]);
 
   useEffect(() => {
     setLocalUsers(users);
   }, [users]);
+
+  useEffect(() => {
+    // Fetch environment information
+    const fetchEnvironmentInfo = async () => {
+      try {
+        const response = await fetch('/api/environment');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentEnvironment(data.current);
+          setAvailableEnvironments(data.available);
+        }
+      } catch (error) {
+        console.error('Failed to fetch environment info:', error);
+      }
+    };
+
+    fetchEnvironmentInfo();
+  }, []);
 
   const handleStatusChange = async (userKey: number, newStatus: string) => {
     try {
@@ -139,6 +161,11 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
     window.location.href = `/duplicate-user/${userKey}`;
   };
 
+  const handleMigrateUser = (user: User) => {
+    setSelectedUser(user);
+    setIsMigrationSheetOpen(true);
+  };
+
   const handleRowClick = (user: User, event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest('input[type="checkbox"], a, button')) {
       return;
@@ -177,7 +204,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
       <div className="relative overflow-auto shadow-sm rounded-2xl border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 bg-white/90 backdrop-blur-md">
-            <tr className="grid grid-cols-[8ch_32ch_1fr_2fr_8ch_12ch] gap-4 px-6 py-4">
+            <tr className="grid grid-cols-[8ch_32ch_1fr_2fr_8ch_16ch] gap-4 px-6 py-4">
               <th className="text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 <div className="flex items-center">
                   {toggleAll && (
@@ -213,7 +240,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
             <tr 
               key={user.USER_KEY} 
               className={cn(
-                "grid grid-cols-[8ch_32ch_1fr_2fr_8ch_12ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
+                "grid grid-cols-[8ch_32ch_1fr_2fr_8ch_16ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
                 index % 2 === 1 ? 'odd:bg-gray-50' : ''
               )}
               onClick={(e) => handleRowClick(user, e)}
@@ -260,6 +287,22 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                 <StatusToggle user={user} onStatusChange={handleStatusChange} />
               </td>
               <td className="flex items-center justify-end gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMigrateUser(user);
+                      }}
+                      className="inline-flex items-center p-2 text-sm font-medium rounded-lg text-purple-600 bg-purple-50 hover:bg-purple-100 transition-colors duration-150"
+                    >
+                      <ArrowRightLeft className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Migrate user</p>
+                  </TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -348,6 +391,45 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                 Close
               </Button>
             </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+
+    <Sheet open={isMigrationSheetOpen} onOpenChange={setIsMigrationSheetOpen}>
+      <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-semibold">
+              <ArrowRightLeft className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-lg font-semibold">Migrate User</div>
+              <div className="text-sm text-gray-500">
+                {selectedUser ? `${selectedUser.FIRST_NAME} ${selectedUser.LAST_NAME}` : ''}
+              </div>
+            </div>
+          </SheetTitle>
+          <SheetDescription>
+            Move user to another environment
+          </SheetDescription>
+        </SheetHeader>
+        
+        {selectedUser && (
+          <div className="mt-6">
+            <UserMigration
+              userKey={selectedUser.USER_KEY}
+              userId={selectedUser.USER_ID}
+              currentEnvironment={currentEnvironment}
+              availableEnvironments={availableEnvironments}
+              onMigrationSuccess={() => {
+                // Don't close the sheet immediately - let user see the success message
+                // Auto-close after 3 seconds to allow user to read the success message
+                setTimeout(() => {
+                  setIsMigrationSheetOpen(false);
+                }, 3000);
+              }}
+            />
           </div>
         )}
       </SheetContent>
