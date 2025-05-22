@@ -62,4 +62,4 @@ Edit `/src/lib/field-config.ts` to move fields between mandatory/optional arrays
 - Company: RSI 
 - repo: https://github.com/RSI-Tech/admin-portal
 - No mention of any AI or claude
-- 
+
