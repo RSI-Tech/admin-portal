@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Trash2, Archive } from 'lucide-react';
@@ -24,8 +24,23 @@ export function UserDirectory({ users }: UserDirectoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [localUsers, setLocalUsers] = useState(users);
 
-  const filteredUsers = users.filter(user => {
+  useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
+
+  const handleUserStatusChange = (userKey: number, newStatus: string) => {
+    setLocalUsers(prev => 
+      prev.map(user => 
+        user.USER_KEY === userKey 
+          ? { ...user, STATUS: newStatus }
+          : user
+      )
+    );
+  };
+
+  const filteredUsers = localUsers.filter(user => {
     const matchesSearch = 
       user.USER_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.FIRST_NAME.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,6 +155,7 @@ export function UserDirectory({ users }: UserDirectoryProps) {
         toggleUser={toggleUser}
         toggleAll={toggleAll}
         allSelected={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+        onUserStatusChange={handleUserStatusChange}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { Edit, Mail, UserPlus, X } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -34,6 +34,44 @@ interface UserTableProps {
   toggleUser?: (userKey: number) => void;
   toggleAll?: () => void;
   allSelected?: boolean;
+  onUserStatusChange?: (userKey: number, newStatus: string) => void;
+}
+
+function StatusToggle({ user, onStatusChange }: { user: User; onStatusChange: (userKey: number, newStatus: string) => Promise<void> }) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isActive = user.STATUS?.toLowerCase() === 'active';
+
+  const handleToggle = async () => {
+    setIsUpdating(true);
+    try {
+      const newStatus = isActive ? 'Inactive' : 'Active';
+      await onStatusChange(user.USER_KEY, newStatus);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={isUpdating}
+      className={`
+        relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out
+        ${isActive ? 'bg-green-500' : 'bg-gray-300'}
+        ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'}
+      `}
+    >
+      <span
+        className={`
+          inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out
+          ${isActive ? 'translate-x-6' : 'translate-x-1'}
+        `}
+      />
+      <span className="sr-only">
+        {isActive ? 'Deactivate user' : 'Activate user'}
+      </span>
+    </button>
+  );
 }
 
 function getStatusBadge(status?: string) {
@@ -53,9 +91,48 @@ function getStatusBadge(status?: string) {
   }
 }
 
-export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSelected }: UserTableProps) {
+export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSelected, onUserStatusChange }: UserTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [localUsers, setLocalUsers] = useState(users);
+
+  useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
+
+  const handleStatusChange = async (userKey: number, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/users/${userKey}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Update local state
+      setLocalUsers(prev => 
+        prev.map(user => 
+          user.USER_KEY === userKey 
+            ? { ...user, STATUS: newStatus }
+            : user
+        )
+      );
+
+      // Call parent callback if provided
+      if (onUserStatusChange) {
+        onUserStatusChange(userKey, newStatus);
+      }
+
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert('Failed to update user status. Please try again.');
+    }
+  };
 
   const handleRowClick = (user: User, event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest('input[type="checkbox"], a, button')) {
@@ -65,7 +142,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
     setIsSheetOpen(true);
   };
 
-  if (!users || users.length === 0) {
+  if (!localUsers || localUsers.length === 0) {
     return (
       <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
         <div className="text-center py-16">
@@ -127,7 +204,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-          {users.map((user, index) => (
+          {localUsers.map((user, index) => (
             <tr 
               key={user.USER_KEY} 
               className={cn(
@@ -175,7 +252,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                 </div>
               </td>
               <td className="flex items-center">
-                {getStatusBadge(user.STATUS)}
+                <StatusToggle user={user} onStatusChange={handleStatusChange} />
               </td>
               <td className="flex items-center justify-end">
                 <Tooltip>
