@@ -131,8 +131,8 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
             value={value}
             onChange={(e) => handleInputChange(field.name, e.target.value)}
             className={hasError ? 
-              "w-full h-11 px-3 py-2 border border-red-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" : 
-              "w-full h-11 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              "w-full h-11 px-3 py-2 border border-red-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200" : 
+              "w-full h-11 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-400"
             }
           >
             <option value="" className="text-gray-500">Select {field.label}</option>
@@ -166,8 +166,8 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
           onChange={(e) => handleInputChange(field.name, e.target.value)}
           maxLength={field.maxLength}
           className={hasError ? 
-            "h-11 border-red-300 focus:ring-red-500 focus:border-red-500 text-sm" : 
-            "h-11 border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            "h-11 border-red-300 focus:ring-red-500 focus:border-red-500 text-sm rounded-lg transition-all duration-200" : 
+            "h-11 border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm rounded-lg transition-all duration-200 hover:border-gray-400"
           }
           placeholder={`Enter ${field.label.toLowerCase()}`}
         />
@@ -189,40 +189,53 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
         )}
 
         {/* Required Fields */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Required Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
+          <div className="flex items-center mb-6">
+            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Required Information</h3>
+              <p className="text-sm text-gray-500">These fields must be completed</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {fieldConfig.mandatory.map(field => renderField(field, true))}
           </div>
         </div>
 
         {/* Optional Fields Toggle */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Additional Information
-            </h3>
+        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                <Info className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Additional Information</h3>
+                <p className="text-sm text-gray-500">Optional fields for more details</p>
+              </div>
+            </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setShowOptional(!showOptional)}
+              className="border-gray-300 hover:bg-gray-50"
             >
-              {showOptional ? 'Hide' : 'Show'} Optional Fields
+              {showOptional ? 'Hide' : 'Show'} Fields
             </Button>
           </div>
           
           {showOptional && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               {fieldConfig.optional.map(field => renderField(field, false))}
             </div>
           )}
         </div>
 
         {/* User Profiles Section */}
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
           <UserProfiles
             userKey={isEdit ? initialData.USER_KEY : undefined}
             onProfilesChange={setUserProfiles}
@@ -231,20 +244,23 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
         </div>
 
         {/* Form Actions */}
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-4 justify-end sticky bottom-0 bg-gradient-to-t from-gray-50 to-transparent pt-6 pb-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => router.push("/")}
             disabled={isSubmitting}
+            className="px-6 shadow-sm border-gray-300 hover:bg-gray-50"
           >
+            <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
           <Button 
             type="submit" 
             disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
           >
+            <Save className="w-4 h-4 mr-2" />
             {isSubmitting
               ? (isEdit ? "Updating..." : "Adding...")
               : (isEdit ? "Update User" : "Add User")

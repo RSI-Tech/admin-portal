@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Users, User, CheckCircle } from "lucide-react";
 
 interface UserProfile {
   PROFILE_ID: string;
@@ -93,60 +93,95 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfi
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header with Stats */}
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-medium text-gray-900">User Profiles</h4>
-        <span className="text-sm text-gray-500">
-          {currentProfiles.length} profile{currentProfiles.length !== 1 ? 's' : ''} assigned
-        </span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <Users className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900">User Profiles</h4>
+            <p className="text-sm text-gray-500">Manage user access and permissions</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+            {currentProfiles.length} Active
+          </div>
+        </div>
       </div>
 
-      {/* Current Profiles */}
-      <div className="space-y-3">
+      {/* Current Profiles Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="text-sm font-medium text-gray-700">Assigned Profiles</h5>
+          {currentProfiles.length > 0 && (
+            <span className="text-xs text-gray-400">Click × to remove</span>
+          )}
+        </div>
+        
         {currentProfiles.length > 0 ? (
-          currentProfiles.map((profile) => (
-            <div
-              key={profile.PROFILE_ID}
-              className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg"
-            >
-              <div className="flex-1">
-                <div className="text-sm font-medium text-blue-900">
-                  {profile.PROFILE_ID}
-                </div>
-                <div className="text-xs text-blue-600 mt-1">
-                  Updated by {profile.UPDATED_BY} on{' '}
-                  {new Date(profile.UPDATED_DATE).toLocaleDateString()}
+          <div className="grid grid-cols-1 gap-3">
+            {currentProfiles.map((profile, index) => (
+              <div
+                key={profile.PROFILE_ID}
+                className="group relative overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{profile.PROFILE_ID}</div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        Updated by <span className="font-medium">{profile.UPDATED_BY}</span> on{' '}
+                        {new Date(profile.UPDATED_DATE).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeProfile(profile.PROFILE_ID)}
+                    className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
+                    title="Remove profile"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => removeProfile(profile.PROFILE_ID)}
-                className="ml-4 p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-6 text-sm text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-            No profiles assigned
+          <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Users className="w-7 h-7 text-gray-400" />
+            </div>
+            <h6 className="text-sm font-medium text-gray-900 mb-1">No profiles assigned</h6>
+            <p className="text-xs text-gray-500">Add a profile below to grant user permissions</p>
           </div>
         )}
       </div>
 
-      {/* Add New Profile */}
+      {/* Add New Profile Section */}
       {getAvailableProfilesForSelection().length > 0 && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3">
+        <div className="border-t border-gray-200 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Plus className="h-4 w-4 text-green-600" />
+            <h5 className="text-sm font-medium text-gray-700">Add New Profile</h5>
+          </div>
+          <div className="flex gap-3">
             <div className="flex-1">
               <select 
                 value={selectedNewProfile}
                 onChange={(e) => setSelectedNewProfile(e.target.value)}
-                className="w-full h-11 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                className="w-full h-11 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm"
               >
-                <option value="" className="text-gray-500">Select a profile to add</option>
+                <option value="" className="text-gray-500">Choose a profile to assign...</option>
                 {getAvailableProfilesForSelection().map((profile) => (
-                  <option key={profile} value={profile} className="text-gray-900 py-2">
+                  <option key={profile} value={profile} className="text-gray-900">
                     {profile}
                   </option>
                 ))}
@@ -156,18 +191,21 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfi
               type="button"
               onClick={addProfile}
               disabled={!selectedNewProfile}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-medium rounded-lg hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-sm"
             >
               <Plus className="h-4 w-4" />
-              Add
+              Add Profile
             </button>
           </div>
         </div>
       )}
 
       {getAvailableProfilesForSelection().length === 0 && currentProfiles.length > 0 && (
-        <div className="text-sm text-gray-500 text-center py-3 bg-gray-50 rounded-lg">
-          All available profiles have been assigned
+        <div className="text-center py-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="text-green-700 text-sm font-medium flex items-center justify-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            All available profiles have been assigned
+          </div>
         </div>
       )}
     </div>

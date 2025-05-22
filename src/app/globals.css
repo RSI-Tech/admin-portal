@@ -54,6 +54,47 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Professional form styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  select,
+  textarea {
+    @apply transition-all duration-200;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Professional focus states */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+  }
+  
+  /* Better text rendering - all headings use sans-serif */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-sans;
+  }
+  
+  /* Ensure all text elements use sans-serif */
+  p, span, div, label, button, input, select, textarea {
+    @apply font-sans;
+  }
+  
+  /* Professional table styling */
+  table {
+    @apply w-full;
+  }
+  
+  /* Animate all transitions */
+  * {
+    @apply transition-colors duration-200;
   }
 }
