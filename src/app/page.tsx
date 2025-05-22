@@ -40,7 +40,7 @@ export default async function UsersPage() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <h1 className="text-3xl font-bold text-gray-900">User Directory</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Users</h1>
               <p className="text-sm text-gray-600">
                 Manage system users and their access permissions
               </p>
