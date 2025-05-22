@@ -24,7 +24,6 @@ async function getUsers(): Promise<{ users: User[], error?: string }> {
       FROM USERS 
       ORDER BY LAST_NAME, FIRST_NAME
     `;
-    await sql.close();
     return { users: result.recordset };
   } catch (error) {
     console.error('Database error:', error);

@@ -5,16 +5,15 @@ import { Edit, AlertCircle } from "lucide-react";
 import { redirect } from "next/navigation";
 
 interface EditUserPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getUser(id: string) {
   try {
     await connectToDatabase();
     const result = await sql.query`SELECT * FROM USERS WHERE USER_KEY = ${id}`;
-    await sql.close();
     
     if (result.recordset.length === 0) {
       return null;
@@ -32,7 +31,8 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   let error = "";
 
   try {
-    user = await getUser(params.id);
+    const resolvedParams = await params;
+    user = await getUser(resolvedParams.id);
     if (!user) {
       redirect("/?error=" + encodeURIComponent("User not found"));
     }

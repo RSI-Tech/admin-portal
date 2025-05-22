@@ -4,15 +4,16 @@ import { fieldConfig } from '@/lib/field-config';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
     
     await connectToDatabase();
     
-    const updates = [];
-    const requestParams = [];
+    const updates: string[] = [];
+    const requestParams: { name: string; value: any }[] = [];
     
     [...fieldConfig.mandatory, ...fieldConfig.optional].forEach((field, index) => {
       if (body.hasOwnProperty(field.name)) {
@@ -66,13 +67,11 @@ export async function PUT(
     sqlRequest.input('userId', params.id);
     
     await sqlRequest.query(query);
-    await sql.close();
     
     return NextResponse.json({ success: true });
     
   } catch (error) {
     console.error('Database error:', error);
-    await sql.close();
     return NextResponse.json(
       { error: 'Failed to update user: ' + (error as Error).message },
       { status: 500 }

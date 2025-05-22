@@ -8,9 +8,9 @@ export async function POST(request: NextRequest) {
     
     await connectToDatabase();
     
-    const fields = [];
-    const values = [];
-    const params = [];
+    const fields: string[] = [];
+    const values: string[] = [];
+    const params: { name: string; value: any }[] = [];
     
     [...fieldConfig.mandatory, ...fieldConfig.optional].forEach((field, index) => {
       if (body[field.name] && body[field.name].toString().trim() !== '') {
@@ -42,13 +42,11 @@ export async function POST(request: NextRequest) {
     const result = await sqlRequest.query(query);
     const userKey = result.recordset[0]?.USER_KEY;
     
-    await sql.close();
     
     return NextResponse.json({ success: true, userKey });
     
   } catch (error) {
     console.error('Database error:', error);
-    await sql.close();
     return NextResponse.json(
       { error: 'Failed to create user: ' + (error as Error).message },
       { status: 500 }

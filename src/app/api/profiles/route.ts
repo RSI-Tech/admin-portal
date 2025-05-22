@@ -12,15 +12,13 @@ export async function GET() {
       ORDER BY user_count DESC, PROFILE_ID ASC
     `;
     
-    await sql.close();
     
     return NextResponse.json({ 
-      profiles: result.recordset.map(row => row.PROFILE_ID) 
+      profiles: result.recordset.map((row: any) => row.PROFILE_ID) 
     });
     
   } catch (error) {
     console.error('Database error:', error);
-    await sql.close();
     return NextResponse.json(
       { error: 'Failed to fetch profiles: ' + (error as Error).message },
       { status: 500 }

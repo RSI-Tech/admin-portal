@@ -1,10 +1,10 @@
-import sql from 'mssql';
+import * as mssql from 'mssql';
 import fs from 'fs';
 import path from 'path';
 
 const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'connection.json'), 'utf8'));
 
-const dbConfig = {
+const dbConfig: mssql.config = {
     user: config.username,
     password: config.password,
     database: config.database,
@@ -16,9 +16,13 @@ const dbConfig = {
     }
 };
 
+let pool: mssql.ConnectionPool | null = null;
+
 export async function connectToDatabase() {
     try {
-        const pool = await sql.connect(dbConfig);
+        if (!pool) {
+            pool = await mssql.connect(dbConfig);
+        }
         return pool;
     } catch (err) {
         console.error('Database connection failed:', err);
@@ -26,4 +30,4 @@ export async function connectToDatabase() {
     }
 }
 
-export { sql };
+export const sql = mssql;

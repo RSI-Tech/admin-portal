@@ -3,9 +3,10 @@ import { connectToDatabase, sql } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     await connectToDatabase();
     
     const result = await sql.query`
@@ -15,13 +16,10 @@ export async function GET(
       ORDER BY PROFILE_ID
     `;
     
-    await sql.close();
-    
     return NextResponse.json({ profiles: result.recordset });
     
   } catch (error) {
     console.error('Database error:', error);
-    await sql.close();
     return NextResponse.json(
       { error: 'Failed to fetch user profiles: ' + (error as Error).message },
       { status: 500 }
@@ -31,9 +29,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
     const { profiles, updatedBy } = body;
     
@@ -60,7 +59,6 @@ export async function PUT(
       }
       
       await transaction.commit();
-      await sql.close();
       
       return NextResponse.json({ success: true });
       
@@ -71,7 +69,6 @@ export async function PUT(
     
   } catch (error) {
     console.error('Database error:', error);
-    await sql.close();
     return NextResponse.json(
       { error: 'Failed to update user profiles: ' + (error as Error).message },
       { status: 500 }
