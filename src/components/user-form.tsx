@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { fieldConfig, FieldConfig, FieldOption } from "@/lib/field-config";
 import { UserProfiles } from "@/components/user-profiles";
@@ -127,25 +126,26 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
             {field.label}
             {isRequired && <span className="text-red-500 ml-1">*</span>}
           </Label>
-          <Select
+          <select
+            id={field.name}
             value={value}
-            onValueChange={(val) => handleInputChange(field.name, val)}
+            onChange={(e) => handleInputChange(field.name, e.target.value)}
+            className={hasError ? 
+              "w-full h-11 px-3 py-2 border border-red-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" : 
+              "w-full h-11 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            }
           >
-            <SelectTrigger className={hasError ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}>
-              <SelectValue placeholder={`Select ${field.label}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options.map((option, index) => {
-                const optionValue = typeof option === "string" ? option : (option as FieldOption).value;
-                const optionLabel = typeof option === "string" ? option : (option as FieldOption).label;
-                return (
-                  <SelectItem key={index} value={optionValue}>
-                    {optionLabel}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            <option value="" className="text-gray-500">Select {field.label}</option>
+            {field.options.map((option, index) => {
+              const optionValue = typeof option === "string" ? option : (option as FieldOption).value;
+              const optionLabel = typeof option === "string" ? option : (option as FieldOption).label;
+              return (
+                <option key={index} value={optionValue} className="text-gray-900">
+                  {optionLabel}
+                </option>
+              );
+            })}
+          </select>
           {hasError && (
             <p className="text-sm text-red-600">{hasError}</p>
           )}
@@ -165,7 +165,10 @@ export function UserForm({ initialData = {}, isEdit = false }: UserFormProps) {
           value={value}
           onChange={(e) => handleInputChange(field.name, e.target.value)}
           maxLength={field.maxLength}
-          className={hasError ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}
+          className={hasError ? 
+            "h-11 border-red-300 focus:ring-red-500 focus:border-red-500 text-sm" : 
+            "h-11 border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          }
           placeholder={`Enter ${field.label.toLowerCase()}`}
         />
         {hasError && (

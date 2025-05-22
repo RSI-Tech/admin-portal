@@ -142,11 +142,11 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy }: UserProfi
               <select 
                 value={selectedNewProfile}
                 onChange={(e) => setSelectedNewProfile(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-11 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
               >
-                <option value="">Select a profile to add</option>
+                <option value="" className="text-gray-500">Select a profile to add</option>
                 {getAvailableProfilesForSelection().map((profile) => (
-                  <option key={profile} value={profile}>
+                  <option key={profile} value={profile} className="text-gray-900 py-2">
                     {profile}
                   </option>
                 ))}
