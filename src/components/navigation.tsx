@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, UserPlus, Settings, Bell, ChevronDown, User } from "lucide-react";
+import { Users, UserPlus, Settings, ChevronDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -55,11 +55,6 @@ export function Navigation() {
           
           <div className="flex items-center space-x-3">
             <EnvironmentSelector />
-            
-            <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5 text-gray-600" />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
