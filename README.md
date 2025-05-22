@@ -62,10 +62,9 @@ Professional user management system with SQL Server 2019 integration and multi-e
        },
        "prod": {
          "name": "Production",
-         "username": "your_username",
-         "password": "your_password", 
          "database": "your_prod_database",
          "server": "prod-server,1433",
+         "integratedSecurity": true,
          "encrypt": true,
          "trustServerCertificate": false
        }
@@ -98,11 +97,37 @@ The application supports multiple environments through the navigation bar enviro
 
 Switch environments using the database icon in the navigation header. Each environment connects to its own database as configured in `connection.json`.
 
-### Connection Security Options
-Each environment supports SSL/TLS configuration:
+### Database Connection Options
+Each environment supports multiple authentication and security options:
+
+#### Authentication Methods
+- **SQL Server Authentication**: Use `username` and `password` fields
+- **Windows Authentication**: Set `integratedSecurity: true` (omit username/password)
+
+#### SSL/TLS Configuration
 - **`encrypt`**: Enable/disable connection encryption (true/false)
 - **`trustServerCertificate`**: Trust self-signed certificates (true/false)
-- **Recommended**: Use `encrypt: true, trustServerCertificate: false` for production
+- **`integratedSecurity`**: Use Windows Authentication instead of SQL authentication (true/false)
+
+#### Examples
+```json
+// SQL Server Authentication with encryption
+{
+  "username": "sa",
+  "password": "password",
+  "encrypt": true,
+  "trustServerCertificate": false
+}
+
+// Windows Authentication with encryption
+{
+  "integratedSecurity": true,
+  "encrypt": true,
+  "trustServerCertificate": false
+}
+```
+
+**Recommended**: Use `encrypt: true, trustServerCertificate: false` for production environments
 
 ### Status Management
 Users can toggle status between Active and Inactive directly from the user table:

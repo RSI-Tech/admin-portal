@@ -19,9 +19,8 @@ function getConnectionConfig() {
 
 function getDbConfig(): mssql.config {
     const config = getConnectionConfig();
-    return {
-        user: config.username,
-        password: config.password,
+    
+    const dbConfig: mssql.config = {
         database: config.database,
         server: config.server.split(',')[0],
         port: parseInt(config.server.split(',')[1]) || 1433,
@@ -30,6 +29,16 @@ function getDbConfig(): mssql.config {
             trustServerCertificate: config.trustServerCertificate !== undefined ? config.trustServerCertificate : true
         }
     };
+    
+    // Use Integrated Security (Windows Authentication) if specified, otherwise use SQL authentication
+    if (config.integratedSecurity) {
+        dbConfig.options!.trustedConnection = true;
+    } else {
+        dbConfig.user = config.username;
+        dbConfig.password = config.password;
+    }
+    
+    return dbConfig;
 }
 
 let pool: mssql.ConnectionPool | null = null;
