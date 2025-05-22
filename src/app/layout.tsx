@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Navigation } from "@/components/navigation";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-sans' });
 
@@ -18,21 +19,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full bg-gray-50">
-      <body className={`${inter.variable} font-sans antialiased bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen`}>
+    <html lang="en" className="h-full">
+      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-gray-50`}>
         <div className="min-h-screen flex flex-col">
-          <header className="bg-white border-b border-gray-200 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-center h-16">
-                <h1 className="text-2xl font-bold text-gray-900">GovPremiere</h1>
-              </div>
+          <Navigation />
+          <main className="flex-1">
+            <div className="max-w-screen-xl mx-auto px-8">
+              {children}
             </div>
-          </header>
-          {children}
+          </main>
           <footer className="py-6 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-screen-xl mx-auto px-8">
               <p className="text-center text-sm text-gray-500">
-                &copy; {new Date().getFullYear()} User Management Portal. All rights reserved.
+                &copy; {new Date().getFullYear()} GovPremiere User Management Portal. All rights reserved.
               </p>
             </div>
           </footer>

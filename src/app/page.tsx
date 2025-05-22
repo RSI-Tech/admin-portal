@@ -1,10 +1,6 @@
 import { connectToDatabase, sql } from "@/lib/db";
-import { Navigation } from "@/components/navigation";
 import { SuccessAlert } from "@/components/success-alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { UserPlus, Edit, Mail } from "lucide-react";
 import Link from "next/link";
@@ -57,10 +53,7 @@ export default async function UsersPage() {
   const { users, error } = await getUsers();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="py-8">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -69,7 +62,7 @@ export default async function UsersPage() {
                 Manage system users and their access permissions
               </p>
             </div>
-            <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md">
+            <Button asChild className="bg-gradient-to-r from-[#295EEF] to-[#1744D6] hover:from-[#1744D6] hover:to-[#295EEF] text-white shadow-md">
               <Link href="/add-user">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add New User
@@ -119,7 +112,7 @@ export default async function UsersPage() {
                     )}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-[#295EEF] to-[#1744D6] rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
                             {user.FIRST_NAME?.[0]}{user.LAST_NAME?.[0]}
                           </div>
                           <span 
@@ -150,7 +143,7 @@ export default async function UsersPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Link 
                           href={`/edit-user/${user.USER_KEY}`}
-                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors duration-150"
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-[#295EEF] bg-[#295EEF]/10 hover:bg-[#295EEF]/20 transition-colors duration-150"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Edit
@@ -164,16 +157,16 @@ export default async function UsersPage() {
           ) : (
             <div className="text-center py-16">
               <div className="relative inline-block">
-                <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-20"></div>
-                <div className="relative bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-full">
-                  <UserPlus className="h-12 w-12 text-blue-600" />
+                <div className="absolute inset-0 bg-[#295EEF] rounded-full blur-xl opacity-20"></div>
+                <div className="relative bg-gradient-to-br from-[#295EEF]/5 to-[#295EEF]/10 p-6 rounded-full">
+                  <UserPlus className="h-12 w-12 text-[#295EEF]" />
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-2">No users found</h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
                 Start building your user directory by adding the first user to the system.
               </p>
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md">
+              <Button asChild className="bg-gradient-to-r from-[#295EEF] to-[#1744D6] hover:from-[#1744D6] hover:to-[#295EEF] text-white shadow-md">
                 <Link href="/add-user">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add First User
@@ -183,6 +176,5 @@ export default async function UsersPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }
