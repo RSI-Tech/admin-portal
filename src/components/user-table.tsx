@@ -95,7 +95,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
       <div className="relative overflow-auto shadow-sm rounded-2xl border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 bg-white/90 backdrop-blur-md">
-            <tr className="grid grid-cols-[12ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4">
+            <tr className="grid grid-cols-[8ch_32ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4">
               <th className="text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 <div className="flex items-center">
                   {toggleAll && (
@@ -106,8 +106,11 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                       onChange={toggleAll}
                     />
                   )}
-                  User ID
+                  Key
                 </div>
+              </th>
+              <th className="text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                User ID
               </th>
               <th className="text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 Name
@@ -128,7 +131,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
             <tr 
               key={user.USER_KEY} 
               className={cn(
-                "grid grid-cols-[12ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
+                "grid grid-cols-[8ch_32ch_1fr_2fr_8ch_6ch] gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
                 index % 2 === 1 ? 'odd:bg-gray-50' : ''
               )}
               onClick={(e) => handleRowClick(user, e)}
@@ -142,6 +145,11 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                     onChange={() => toggleUser(user.USER_KEY)}
                   />
                 )}
+                <span className="text-sm font-sans text-gray-900">
+                  {user.USER_KEY}
+                </span>
+              </td>
+              <td className="flex items-center">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#295EEF] to-[#1744D6] rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
                   {user.FIRST_NAME?.[0]}{user.LAST_NAME?.[0]}
                 </div>
@@ -149,8 +157,8 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
                   title={user.USER_ID}
                   className="text-sm font-sans text-gray-900 truncate"
                 >
-                  {user.USER_ID.length > 10 
-                    ? `${user.USER_ID.substring(0, 7)}...` 
+                  {user.USER_ID.length > 32 
+                    ? `${user.USER_ID.substring(0, 32)}...` 
                     : user.USER_ID
                   }
                 </span>

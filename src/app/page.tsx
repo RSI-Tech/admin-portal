@@ -22,7 +22,7 @@ async function getUsers(): Promise<{ users: User[], error?: string }> {
     const result = await sql.query`
       SELECT USER_KEY, USER_ID, FIRST_NAME, LAST_NAME, STATUS, EMAIL_ADDRESS 
       FROM USERS 
-      ORDER BY LAST_NAME, FIRST_NAME
+      ORDER BY USER_KEY
     `;
     return { users: result.recordset };
   } catch (error) {
