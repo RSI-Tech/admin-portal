@@ -8,6 +8,21 @@ export async function POST(request: NextRequest) {
     
     await connectToDatabase();
     
+    // Check if USER_ID already exists
+    if (body.USER_ID) {
+      const checkQuery = `SELECT COUNT(*) as count FROM USERS WHERE USER_ID = @userId`;
+      const checkRequest = new sql.Request();
+      checkRequest.input('userId', body.USER_ID);
+      const checkResult = await checkRequest.query(checkQuery);
+      
+      if (checkResult.recordset[0].count > 0) {
+        return NextResponse.json(
+          { error: `User ID '${body.USER_ID}' already exists. Please choose a different User ID.` },
+          { status: 409 }
+        );
+      }
+    }
+    
     const fields: string[] = [];
     const values: string[] = [];
     const params: { name: string; value: any }[] = [];
