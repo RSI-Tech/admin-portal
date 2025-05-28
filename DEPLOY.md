@@ -339,13 +339,15 @@ npm install -g pm2-windows-service
        max_memory_restart: '1G',
        env: {
          NODE_ENV: 'production',
-         PORT: 3000
+         PORT: 3000,
+         DEPLOY_AS_SUBAPP: 'true'  // Required for sub-application deployment
        }
      }]
    };
    ```
    
    **Note**: Using the Next.js binary directly is more reliable than using `npm` as the script.
+   **Important**: Set `DEPLOY_AS_SUBAPP: 'true'` when deploying as a sub-application to fix static asset paths.
 
 2. Install PM2 as Windows Service:
    ```cmd
@@ -458,6 +460,27 @@ npm install -g pm2-windows-service
    ```
 4. Verify URL Rewrite module: `Get-WindowsFeature -Name Web-Url-Rewrite`
 5. Check application pool is running: `Get-WebAppPoolState -Name "AdminPortalPool"`
+
+**Static assets 404 errors (CSS/JS not loading):**
+This happens when Next.js doesn't know it's deployed as a sub-application.
+1. **Update ecosystem.config.js** to include:
+   ```javascript
+   env: {
+     NODE_ENV: 'production',
+     PORT: 3000,
+     DEPLOY_AS_SUBAPP: 'true'
+   }
+   ```
+2. **Rebuild the application**:
+   ```powershell
+   cd E:\admin-portal
+   npm run build
+   ```
+3. **Restart PM2**:
+   ```powershell
+   pm2 restart admin-portal
+   ```
+4. **Clear browser cache** and reload the page
 
 **Port conflicts:**
 - Change application port in ecosystem.config.js
@@ -676,7 +699,8 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3000,
+      DEPLOY_AS_SUBAPP: '$($AsSubApplication.ToString().ToLower())'
     }
   }]
 };
