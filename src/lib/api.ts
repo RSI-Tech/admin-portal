@@ -2,15 +2,16 @@
  * API utility functions for handling requests with proper basePath
  */
 
-// Get the base path from Next.js config
-const basePath = process.env.NODE_ENV === 'production' ? '/admin-portal' : '';
-
 /**
  * Creates an API URL with the correct base path
  * @param endpoint - The API endpoint (e.g., '/api/users')
  * @returns Full API URL with base path
  */
 export function getApiUrl(endpoint: string): string {
+  // Check if we're in a sub-application deployment by looking at the current URL
+  const isSubApp = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-portal');
+  const basePath = isSubApp ? '/admin-portal' : '';
+  
   // Remove leading slash if present, then add base path
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   return `${basePath}/${cleanEndpoint}`;
