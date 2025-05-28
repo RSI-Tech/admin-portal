@@ -7,4 +7,4 @@ pymssql==2.2.10
 python-multipart==0.0.6
 pytest==7.4.3
 httpx==0.25.2
-pywin32==306; sys_platform == "win32"  # For Windows service support
+# pywin32==306  # Windows only - not needed on Linux/Mac
