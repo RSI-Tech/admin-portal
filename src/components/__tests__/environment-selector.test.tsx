@@ -1,27 +1,40 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { EnvironmentSelector } from '../environment-selector';
 
-// Mock fetch
-global.fetch = jest.fn();
-const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
+// Mock the API module
+jest.mock('@/lib/api', () => ({
+  apiGet: jest.fn(),
+  apiPost: jest.fn(),
+  apiFetch: jest.fn(),
+  getApiUrl: jest.fn((endpoint: string) => endpoint)
+}));
+
+import { apiGet, apiPost } from '@/lib/api';
+const mockApiGet = apiGet as jest.MockedFunction<typeof apiGet>;
+const mockApiPost = apiPost as jest.MockedFunction<typeof apiPost>;
 
 // Mock window.location
 const mockLocation = {
-  href: 'http://localhost:3000'
+  href: 'http://localhost:3000',
+  pathname: '/',
+  search: '',
+  hash: ''
 };
 Object.defineProperty(window, 'location', {
   value: mockLocation,
-  writable: true
+  writable: true,
+  configurable: true
 });
 
 describe('EnvironmentSelector', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFetch.mockClear();
+    mockApiGet.mockClear();
+    mockApiPost.mockClear();
   });
 
   it('should render loading state initially', () => {
-    mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
+    mockApiGet.mockImplementation(() => new Promise(() => {})); // Never resolves
     
     render(<EnvironmentSelector />);
     
@@ -29,31 +42,25 @@ describe('EnvironmentSelector', () => {
   });
 
   it('should load current environment on mount', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ 
-        current: 'dev',
-        name: 'Development', 
-        available: ['dev', 'int', 'test', 'prod'] 
-      })
-    } as Response);
+    mockApiGet.mockResolvedValueOnce({ 
+      current: 'dev',
+      name: 'Development', 
+      available: ['dev', 'int', 'test', 'prod'] 
+    });
 
     await act(async () => {
       render(<EnvironmentSelector />);
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/environment');
+    expect(mockApiGet).toHaveBeenCalledWith('/api/environment');
   });
 
   it('should display environment selector button when loaded', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ 
-        current: 'dev',
-        name: 'Development', 
-        available: ['dev', 'int', 'test', 'prod'] 
-      })
-    } as Response);
+    mockApiGet.mockResolvedValueOnce({ 
+      current: 'dev',
+      name: 'Development', 
+      available: ['dev', 'int', 'test', 'prod'] 
+    });
 
     await act(async () => {
       render(<EnvironmentSelector />);
@@ -66,14 +73,11 @@ describe('EnvironmentSelector', () => {
   });
 
   it('should call API when environment change is triggered', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ 
-        current: 'dev',
-        name: 'Development', 
-        available: ['dev', 'int', 'test', 'prod'] 
-      })
-    } as Response);
+    mockApiGet.mockResolvedValueOnce({ 
+      current: 'dev',
+      name: 'Development', 
+      available: ['dev', 'int', 'test', 'prod'] 
+    });
 
     await act(async () => {
       render(<EnvironmentSelector />);
@@ -86,14 +90,11 @@ describe('EnvironmentSelector', () => {
   });
 
   it('should display current environment in button', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ 
-        current: 'prod',
-        name: 'Production', 
-        available: ['dev', 'int', 'test', 'prod'] 
-      })
-    } as Response);
+    mockApiGet.mockResolvedValueOnce({ 
+      current: 'prod',
+      name: 'Production', 
+      available: ['dev', 'int', 'test', 'prod'] 
+    });
 
     await act(async () => {
       render(<EnvironmentSelector />);
@@ -106,7 +107,7 @@ describe('EnvironmentSelector', () => {
   });
 
   it('should handle API errors gracefully', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('API Error'));
+    mockApiGet.mockRejectedValueOnce(new Error('API Error'));
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     
@@ -125,25 +126,4 @@ describe('EnvironmentSelector', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should handle fetch response with missing ok property', async () => {
-    mockFetch.mockResolvedValueOnce({
-      json: async () => ({ 
-        current: 'dev',
-        name: 'Development', 
-        available: ['dev', 'int', 'test', 'prod'] 
-      })
-    } as Response);
-
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-
-    await act(async () => {
-      render(<EnvironmentSelector />);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
-    });
-
-    consoleSpy.mockRestore();
-  });
 });

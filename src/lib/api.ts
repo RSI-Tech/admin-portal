@@ -9,7 +9,10 @@
  */
 export function getApiUrl(endpoint: string): string {
   // Check if we're in a sub-application deployment by looking at the current URL
-  const isSubApp = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-portal');
+  const isSubApp = typeof window !== 'undefined' && 
+                   window.location && 
+                   window.location.pathname && 
+                   window.location.pathname.startsWith('/admin-portal');
   const basePath = isSubApp ? '/admin-portal' : '';
   
   // Remove leading slash if present, then add base path
