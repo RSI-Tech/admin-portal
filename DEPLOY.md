@@ -272,9 +272,14 @@ $webConfig = @'
   <system.webServer>
     <rewrite>
       <rules>
+        <!-- Rewrite _next to .next for static file serving -->
+        <rule name="RewriteNextDirectory" stopProcessing="false">
+          <match url="^_next/(.*)" />
+          <action type="Rewrite" url=".next/{R:1}" />
+        </rule>
         <!-- Serve static files directly from file system -->
         <rule name="StaticFiles" stopProcessing="true">
-          <match url="^_next/static/.*" />
+          <match url="^\.next/static/.*" />
           <conditions>
             <add input="{REQUEST_FILENAME}" matchType="IsFile" />
           </conditions>
@@ -704,9 +709,14 @@ if ($AsSubApplication) {
   <system.webServer>
     <rewrite>
       <rules>
+        <!-- Rewrite _next to .next for static file serving -->
+        <rule name="RewriteNextDirectory" stopProcessing="false">
+          <match url="^_next/(.*)" />
+          <action type="Rewrite" url=".next/{R:1}" />
+        </rule>
         <!-- Serve static files directly from file system -->
         <rule name="StaticFiles" stopProcessing="true">
-          <match url="^_next/static/.*" />
+          <match url="^\.next/static/.*" />
           <conditions>
             <add input="{REQUEST_FILENAME}" matchType="IsFile" />
           </conditions>
