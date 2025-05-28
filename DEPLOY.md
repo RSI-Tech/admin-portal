@@ -272,13 +272,31 @@ $webConfig = @'
   <system.webServer>
     <rewrite>
       <rules>
+        <!-- Serve static files directly from file system -->
+        <rule name="StaticFiles" stopProcessing="true">
+          <match url="^_next/static/.*" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" />
+          </conditions>
+          <action type="None" />
+        </rule>
+        <!-- Proxy dynamic requests to Node.js -->
         <rule name="ProxyToNode" stopProcessing="true">
           <match url="(.*)" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
           <action type="Rewrite" url="http://localhost:3000/{R:0}" />
         </rule>
       </rules>
     </rewrite>
     <httpErrors existingResponse="PassThrough" />
+    <!-- Enable static file serving -->
+    <staticContent>
+      <mimeMap fileExtension=".js" mimeType="application/javascript" />
+      <mimeMap fileExtension=".css" mimeType="text/css" />
+    </staticContent>
   </system.webServer>
 </configuration>
 '@
@@ -686,13 +704,31 @@ if ($AsSubApplication) {
   <system.webServer>
     <rewrite>
       <rules>
+        <!-- Serve static files directly from file system -->
+        <rule name="StaticFiles" stopProcessing="true">
+          <match url="^_next/static/.*" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" />
+          </conditions>
+          <action type="None" />
+        </rule>
+        <!-- Proxy dynamic requests to Node.js -->
         <rule name="ProxyToNode" stopProcessing="true">
           <match url="(.*)" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
           <action type="Rewrite" url="http://localhost:3000/{R:0}" />
         </rule>
       </rules>
     </rewrite>
     <httpErrors existingResponse="PassThrough" />
+    <!-- Enable static file serving -->
+    <staticContent>
+      <mimeMap fileExtension=".js" mimeType="application/javascript" />
+      <mimeMap fileExtension=".css" mimeType="text/css" />
+    </staticContent>
   </system.webServer>
 </configuration>
 "@
