@@ -11,50 +11,95 @@ This guide provides step-by-step instructions for deploying the Admin Portal app
 - Internet connectivity for package downloads
 
 ### Required Software
-- **Node.js 18.x or later** - [Download from nodejs.org](https://nodejs.org/)
+- **Node.js 18.x or later**
 - **SQL Server 2019** - Already installed with your database
-- **IIS (Internet Information Services)** - For hosting the application
-- **Git** (optional) - For code deployment
+- **IIS (Internet Information Services)**
+- **Git** - For code deployment
+- **Chocolatey** - Package manager for Windows
 
-## Step 1: Install Node.js
+## Step 0: Install Chocolatey Package Manager
 
-1. Download Node.js LTS version from [https://nodejs.org/](https://nodejs.org/)
-2. Run the installer as Administrator
-3. Accept all default settings
-4. Verify installation by opening Command Prompt and running:
-   ```cmd
-   node --version
-   npm --version
-   ```
+Open PowerShell as Administrator and run:
 
-## Step 2: Install IIS and URL Rewrite Module
+```powershell
 
-1. Open **Server Manager**
-2. Click **Add roles and features**
-3. Select **Web Server (IIS)** role
-4. Include **Management Tools**
-5. Install the **URL Rewrite Module**:
-   - Download from [Microsoft IIS URL Rewrite](https://www.iis.net/downloads/microsoft/url-rewrite)
-   - Run installer as Administrator
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+```
 
-## Step 3: Deploy Application Code
+Verify installation:
+```powershell
+choco --version
+```
+
+## Step 1: Install Required Software with Chocolatey
+
+Run the following PowerShell commands as Administrator:
+
+```powershell
+# Install Node.js LTS
+choco install nodejs-lts -y
+
+# Install Git
+choco install git -y
+
+# Install IIS and Management Tools
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole, IIS-WebServer, IIS-CommonHttpFeatures, IIS-HttpErrors, IIS-HttpRedirect, IIS-ApplicationDevelopment, IIS-NetFxExtensibility45, IIS-HealthAndDiagnostics, IIS-HttpLogging, IIS-Security, IIS-RequestFiltering, IIS-Performance, IIS-WebServerManagementTools, IIS-IIS6ManagementCompatibility, IIS-Metabase, IIS-ManagementConsole, IIS-BasicAuthentication, IIS-WindowsAuthentication, IIS-StaticContent, IIS-DefaultDocument, IIS-DirectoryBrowsing -All
+
+# Install URL Rewrite Module for IIS
+choco install urlrewrite -y
+
+# Install SQL Server command line tools (optional, for testing)
+choco install sqlserver-cmdlineutils -y
+
+# Refresh environment variables
+refreshenv
+```
+
+Verify installations:
+```powershell
+node --version
+npm --version
+git --version
+```
+
+## Step 2: Deploy Application Code
+
+### Choose Installation Location
+You can install the application in any location with appropriate permissions. Common options:
+- **Default IIS path**: `C:\inetpub\wwwroot\admin-portal`
+- **Custom path**: `E:\admin-portal` or any drive with sufficient space
+
+**Important**: If using a custom path, ensure the IIS_IUSRS group has read/write permissions:
+```powershell
+# Example: Grant permissions to E:\admin-portal
+icacls "E:\admin-portal" /grant "IIS_IUSRS:(OI)(CI)F" /T
+```
 
 ### Option A: Using Git (Recommended)
 ```cmd
+# For default path
 cd C:\inetpub\wwwroot
 git clone https://github.com/RSI-Tech/admin-portal.git
+cd admin-portal
+
+# OR for custom path (e.g., E: drive)
+mkdir E:\admin-portal
+cd E:\
+git clone https://github.com/RSI-Tech/admin-portal.git admin-portal
 cd admin-portal
 ```
 
 ### Option B: Manual Upload
-1. Copy application files to `C:\inetpub\wwwroot\admin-portal\`
+1. Copy application files to your chosen location (e.g., `E:\admin-portal\`)
 2. Ensure all source files are present
 
-## Step 4: Configure Application
+## Step 3: Configure Application
 
 1. Navigate to application directory:
    ```cmd
-   cd C:\inetpub\wwwroot\admin-portal
+   # Replace with your installation path
+   cd E:\admin-portal
+   # or cd C:\inetpub\wwwroot\admin-portal
    ```
 
 2. Install dependencies:
@@ -94,13 +139,36 @@ cd admin-portal
    - **`encrypt: false`** - Disables encryption (acceptable for local development)
    - **`trustServerCertificate: false`** - Validates SSL certificates (recommended for production)
    - **`trustServerCertificate: true`** - Accepts self-signed certificates (development only)
+   - **`integratedSecurity: true`** - Use Windows Authentication instead of username/password
+
+   **For Integrated Security (Windows Authentication):**
+   ```json
+   {
+     "current_env": "prod",
+     "environments": {
+       "prod": {
+         "name": "Production",
+         "database": "admin_portal_prod",
+         "server": "your_sql_server,1433",
+         "integratedSecurity": true,
+         "encrypt": true,
+         "trustServerCertificate": false
+       }
+     }
+   }
+   ```
+   
+   **Important for Integrated Security:**
+   - Remove `username` and `password` fields
+   - The IIS Application Pool identity must have SQL Server access
+   - Or configure the pool to run under a domain account with SQL permissions
 
 4. Build the application:
    ```cmd
    npm run build
    ```
 
-## Step 5: Configure IIS
+## Step 4: Configure IIS
 
 ### Create Application Pool
 1. Open **IIS Manager**
@@ -124,7 +192,7 @@ cd admin-portal
 2. Configure:
    - **Site name**: `Admin Portal`
    - **Application pool**: `AdminPortalPool`
-   - **Physical path**: `C:\inetpub\wwwroot\admin-portal`
+   - **Physical path**: Your installation directory (e.g., `E:\admin-portal`)
    - **Port**: `80` (or your preferred port)
    - **Host name**: `admin-portal.yourdomain.com` (optional)
 
@@ -135,7 +203,7 @@ cd admin-portal
 4. Enter server name: `localhost:3000`
 5. Click **OK**
 
-## Step 6: Setup as Windows Service
+## Step 5: Setup as Windows Service
 
 ### Install PM2 globally
 ```cmd
@@ -144,14 +212,14 @@ npm install -g pm2-windows-service
 ```
 
 ### Configure PM2
-1. Create PM2 ecosystem file `ecosystem.config.js`:
+1. Create PM2 ecosystem file `ecosystem.config.js` in the application root directory:
    ```javascript
    module.exports = {
      apps: [{
        name: 'admin-portal',
        script: 'npm',
        args: 'start',
-       cwd: 'C:\\inetpub\\wwwroot\\admin-portal',
+       cwd: 'E:\\admin-portal', // Update to match your installation path
        instances: 1,
        autorestart: true,
        watch: false,
@@ -175,7 +243,7 @@ npm install -g pm2-windows-service
    pm2 save
    ```
 
-## Step 7: Configure Firewall
+## Step 6: Configure Firewall
 
 1. Open **Windows Defender Firewall with Advanced Security**
 2. Create **Inbound Rule**:
@@ -186,7 +254,7 @@ npm install -g pm2-windows-service
    - **Profile**: All profiles
    - **Name**: Admin Portal
 
-## Step 8: Database Connectivity
+## Step 7: Database Connectivity
 
 1. Ensure SQL Server is running and accessible
 2. Test database connection from the server:
@@ -196,11 +264,13 @@ npm install -g pm2-windows-service
 
 3. Verify the application can connect:
    ```cmd
-   cd C:\inetpub\wwwroot\admin-portal
-   node -e "const db = require('./src/lib/db'); db.connectToDatabase().then(() => console.log('Connected')).catch(console.error)"
+   # Navigate to your installation directory
+   cd E:\admin-portal
+   npm run build
+   # Test connection after build completes
    ```
 
-## Step 9: SSL Configuration (Recommended)
+## Step 8: SSL Configuration (Recommended)
 
 1. Obtain SSL certificate for your domain
 2. In IIS Manager, select your site
@@ -210,7 +280,7 @@ npm install -g pm2-windows-service
    - **Port**: `443`
    - **SSL certificate**: Select your certificate
 
-## Step 10: Monitoring and Maintenance
+## Step 9: Monitoring and Maintenance
 
 ### Application Monitoring
 - Use PM2 monitoring: `pm2 monit`
@@ -223,7 +293,7 @@ npm install -g pm2-windows-service
 3. **Quarterly**: Review and update SSL certificates
 
 ### Backup Strategy
-1. **Application Files**: Regular backup of `C:\inetpub\wwwroot\admin-portal\`
+1. **Application Files**: Regular backup of your installation directory (e.g., `E:\admin-portal\`)
 2. **Configuration**: Backup `connection.json` and IIS configuration
 3. **Database**: Regular SQL Server database backups
 
@@ -280,6 +350,152 @@ npm install -g pm2-windows-service
 4. **Updates**: Keep Windows Server, IIS, and Node.js updated
 5. **SSL**: Always use HTTPS in production
 6. **Secrets**: Never commit connection.json to version control
+
+## Automated Deployment Script
+
+Save this PowerShell script as `deploy-admin-portal.ps1` for automated deployment:
+
+```powershell
+# Admin Portal Automated Deployment Script
+# Run as Administrator
+
+param(
+    [string]$InstallPath = "E:\admin-portal",  # Change this to your preferred path
+    [string]$GitRepo = "https://github.com/RSI-Tech/admin-portal.git"
+)
+
+Write-Host "=== Admin Portal Automated Deployment ===" -ForegroundColor Green
+
+# Step 1: Install Chocolatey
+Write-Host "`nInstalling Chocolatey..." -ForegroundColor Yellow
+if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+}
+
+# Step 2: Install Required Software
+Write-Host "`nInstalling required software..." -ForegroundColor Yellow
+choco install nodejs-lts git urlrewrite sqlserver-cmdlineutils -y
+
+# Step 3: Enable IIS Features
+Write-Host "`nEnabling IIS features..." -ForegroundColor Yellow
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole, IIS-WebServer, IIS-CommonHttpFeatures, IIS-HttpErrors, IIS-HttpRedirect, IIS-ApplicationDevelopment, IIS-NetFxExtensibility45, IIS-HealthAndDiagnostics, IIS-HttpLogging, IIS-Security, IIS-RequestFiltering, IIS-Performance, IIS-WebServerManagementTools, IIS-IIS6ManagementCompatibility, IIS-Metabase, IIS-ManagementConsole, IIS-BasicAuthentication, IIS-WindowsAuthentication, IIS-StaticContent, IIS-DefaultDocument, IIS-DirectoryBrowsing -All
+
+# Step 4: Clone Repository
+Write-Host "`nCloning repository..." -ForegroundColor Yellow
+if (Test-Path $InstallPath) {
+    Write-Host "Directory exists. Pulling latest changes..." -ForegroundColor Cyan
+    cd $InstallPath
+    git pull
+} else {
+    $parentPath = Split-Path $InstallPath -Parent
+    cd $parentPath
+    git clone $GitRepo (Split-Path $InstallPath -Leaf)
+}
+
+# Step 5: Set Permissions (if custom path)
+if ($InstallPath -notlike "*inetpub*") {
+    Write-Host "`nSetting permissions for custom path..." -ForegroundColor Yellow
+    icacls "$InstallPath" /grant "IIS_IUSRS:(OI)(CI)F" /T
+}
+
+# Step 6: Install NPM Dependencies
+Write-Host "`nInstalling NPM dependencies..." -ForegroundColor Yellow
+cd $InstallPath
+npm install
+
+# Step 7: Build Application
+Write-Host "`nBuilding application..." -ForegroundColor Yellow
+npm run build
+
+# Step 8: Install PM2
+Write-Host "`nInstalling PM2..." -ForegroundColor Yellow
+npm install -g pm2
+npm install -g pm2-windows-service
+
+# Step 9: Create IIS Application Pool
+Write-Host "`nConfiguring IIS..." -ForegroundColor Yellow
+Import-Module WebAdministration
+
+if (!(Test-Path "IIS:\AppPools\AdminPortalPool")) {
+    New-WebAppPool -Name "AdminPortalPool"
+    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name processIdentity.identityType -Value ApplicationPoolIdentity
+    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name recycling.periodicRestart.time -Value 0
+    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name startMode -Value "AlwaysRunning"
+}
+
+# Step 10: Create IIS Website
+if (!(Get-Website -Name "Admin Portal" -ErrorAction SilentlyContinue)) {
+    New-Website -Name "Admin Portal" -Port 80 -PhysicalPath $InstallPath -ApplicationPool "AdminPortalPool"
+}
+
+# Step 11: Configure URL Rewrite
+$webConfigPath = Join-Path $InstallPath "web.config"
+$webConfigContent = @'
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="ReverseProxy" stopProcessing="true">
+          <match url="(.*)" />
+          <action type="Rewrite" url="http://localhost:3000/{R:1}" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>
+'@
+Set-Content -Path $webConfigPath -Value $webConfigContent
+
+# Step 12: Configure Firewall
+Write-Host "`nConfiguring firewall..." -ForegroundColor Yellow
+New-NetFirewallRule -DisplayName "Admin Portal" -Direction Inbound -Protocol TCP -LocalPort 80,443,3000 -Action Allow -ErrorAction SilentlyContinue
+
+# Step 13: Create ecosystem.config.js
+Write-Host "`nCreating PM2 configuration..." -ForegroundColor Yellow
+$ecosystemPath = Join-Path $InstallPath "ecosystem.config.js"
+$ecosystemContent = @"
+module.exports = {
+  apps: [{
+    name: 'admin-portal',
+    script: 'npm',
+    args: 'start',
+    cwd: '$($InstallPath -replace "\\", "\\\\")',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000
+    }
+  }]
+};
+"@
+Set-Content -Path $ecosystemPath -Value $ecosystemContent
+
+Write-Host "`n=== Deployment Complete ===" -ForegroundColor Green
+Write-Host "Installation Path: $InstallPath" -ForegroundColor Cyan
+Write-Host "`nNext steps:" -ForegroundColor Yellow
+Write-Host "1. Create connection.json with your database credentials"
+Write-Host "2. Run 'pm2 start ecosystem.config.js' to start the application"
+Write-Host "3. Run 'pm2-service-install' to install as Windows service"
+Write-Host "4. Configure SSL certificate in IIS for HTTPS"
+```
+
+Run the script:
+```powershell
+# Run as Administrator with default path (E:\admin-portal)
+.\deploy-admin-portal.ps1
+
+# Or specify a custom installation path
+.\deploy-admin-portal.ps1 -InstallPath "D:\Applications\admin-portal"
+
+# Or use the default IIS path
+.\deploy-admin-portal.ps1 -InstallPath "C:\inetpub\wwwroot\admin-portal"
+```
 
 ## Contact
 

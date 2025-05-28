@@ -32,6 +32,11 @@ function getDbConfig(): mssql.config {
     
     // Use Integrated Security (Windows Authentication) if specified, otherwise use SQL authentication
     if (config.integratedSecurity) {
+        // For Windows Authentication with mssql package
+        dbConfig.authentication = {
+            type: 'ntlm'
+        };
+        // Some versions also need trustedConnection
         dbConfig.options!.trustedConnection = true;
     } else {
         dbConfig.user = config.username;
