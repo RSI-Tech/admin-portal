@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: '/admin-portal',
-  assetPrefix: '/admin-portal',
+  // Remove basePath when running behind IIS sub-application
+  // IIS handles the /admin-portal prefix
+  basePath: process.env.DEPLOY_AS_SUBAPP === 'true' ? '' : '/admin-portal',
+  assetPrefix: process.env.DEPLOY_AS_SUBAPP === 'true' ? '/admin-portal' : '/admin-portal',
   trailingSlash: false,
   // Add this to help with static file serving
   publicRuntimeConfig: {
