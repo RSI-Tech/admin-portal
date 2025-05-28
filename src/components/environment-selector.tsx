@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,6 +26,7 @@ interface EnvironmentConfig {
 }
 
 export function EnvironmentSelector() {
+  const router = useRouter();
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isChanging, setIsChanging] = useState(false);
@@ -32,7 +34,7 @@ export function EnvironmentSelector() {
   const fetchEnvironment = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/environment');
+      const response = await fetch('./api/environment');
       if (response.ok) {
         const envData = await response.json();
         setEnvironment(envData);
@@ -49,7 +51,7 @@ export function EnvironmentSelector() {
     
     setIsChanging(true);
     try {
-      const response = await fetch('/api/environment', {
+      const response = await fetch('./api/environment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

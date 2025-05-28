@@ -26,7 +26,7 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy, initialProf
 
   const fetchAvailableProfiles = async () => {
     try {
-      const response = await fetch('/api/profiles');
+      const response = await fetch('./api/profiles');
       if (response.ok) {
         const data = await response.json();
         setAvailableProfiles(data.profiles);

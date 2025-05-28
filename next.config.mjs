@@ -2,7 +2,7 @@
 const nextConfig = {
   basePath: '/admin-portal',
   assetPrefix: '/admin-portal',
-  trailingSlash: false,
+  trailingSlash: true,
   // Add this to help with static file serving
   publicRuntimeConfig: {
     basePath: '/admin-portal',

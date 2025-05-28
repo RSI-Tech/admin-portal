@@ -108,7 +108,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
     // Fetch environment information
     const fetchEnvironmentInfo = async () => {
       try {
-        const response = await fetch('/api/environment');
+        const response = await fetch('./api/environment');
         if (response.ok) {
           const data = await response.json();
           setCurrentEnvironment(data.current);
