@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet } from '@/lib/api';
+import { apiGet, apiFetch } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Users, User, CheckCircle } from "lucide-react";
@@ -38,7 +38,7 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy, initialProf
     if (!userKey) return;
     
     try {
-      const response = await fetch(`/api/users/${userKey}/profiles`);
+      const response = await apiFetch(`/api/users/${userKey}/profiles`);
       if (response.ok) {
         const data = await response.json();
         setCurrentProfiles(data.profiles);

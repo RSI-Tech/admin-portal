@@ -1,7 +1,7 @@
 import { Edit, Mail, UserPlus, X, Copy, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -122,7 +122,7 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
 
   const handleStatusChange = async (userKey: number, newStatus: string) => {
     try {
-      const response = await fetch(`/api/users/${userKey}/status`, {
+      const response = await apiFetch(`/api/users/${userKey}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
