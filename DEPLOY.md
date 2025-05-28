@@ -208,9 +208,17 @@ cd admin-portal
       ```
 
 4. Build the application:
-   ```cmd
+   ```powershell
+   # For sub-application deployment, set environment variable first:
+   $env:NODE_ENV = "production"
+   # OR
+   $env:DEPLOY_AS_SUBAPP = "true"
+   
+   # Then build
    npm run build
    ```
+   
+   **Note**: For sub-application deployment, the environment variable must be set BEFORE building!
 
 ## Step 4: Configure IIS
 
@@ -418,6 +426,36 @@ npm install -g pm2-windows-service
 
 ### Common Issues
 
+**CSS not loading in production:**
+
+If CSS is not loading in production builds:
+
+1. **Verify CSS generation during build:**
+   ```bash
+   npm run build
+   # Check for CSS files
+   ls .next/static/css/
+   ```
+
+2. **Ensure proper Next.js configuration:**
+   - The `next.config.mjs` should include proper `basePath` and `assetPrefix` settings
+   - The `output: 'standalone'` option helps with production deployments
+
+3. **Check IIS static file handling:**
+   - Ensure IIS can serve files from the `_next` directory
+   - The URL rewrite rules should pass through static assets
+
+4. **Clear browser cache:**
+   - CSS files are aggressively cached
+   - Try hard refresh (Ctrl+F5) or incognito mode
+
+5. **Rebuild the application:**
+   ```bash
+   # Clean build
+   rm -rf .next
+   npm run build
+   ```
+
 **Application won't start:**
 - Check Node.js installation: `node --version`
 - Verify PM2 service: `pm2 status`
@@ -463,24 +501,32 @@ npm install -g pm2-windows-service
 
 **Static assets 404 errors (CSS/JS not loading):**
 This happens when Next.js doesn't know it's deployed as a sub-application.
-1. **Update ecosystem.config.js** to include:
-   ```javascript
-   env: {
-     NODE_ENV: 'production',
-     PORT: 3000,
-     DEPLOY_AS_SUBAPP: 'true'
-   }
-   ```
-2. **Rebuild the application**:
-   ```powershell
-   cd E:\admin-portal
-   npm run build
-   ```
-3. **Restart PM2**:
-   ```powershell
-   pm2 restart admin-portal
-   ```
-4. **Clear browser cache** and reload the page
+
+**Fix Method 1 - Set environment variable before build:**
+```powershell
+cd E:\admin-portal
+pm2 stop admin-portal
+pm2 delete admin-portal
+
+# Set environment variable for the build
+$env:DEPLOY_AS_SUBAPP = "true"
+# OR for production builds:
+$env:NODE_ENV = "production"
+
+# Rebuild with the environment variable set
+npm run build
+
+# Start PM2
+pm2 start ecosystem.config.js
+pm2 save
+```
+
+**Fix Method 2 - Update ecosystem.config.js and rebuild:**
+1. Ensure ecosystem.config.js includes the environment variable
+2. The key is to set the variable BEFORE building
+3. Clear browser cache and reload
+
+**Important**: The environment variable must be set during `npm run build`, not just in PM2!
 
 **Port conflicts:**
 - Change application port in ecosystem.config.js
