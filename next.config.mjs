@@ -7,8 +7,7 @@ const nextConfig = {
   publicRuntimeConfig: {
     basePath: '/admin-portal',
   },
-  // Ensure static exports work properly
-  output: 'standalone',
+  // Remove standalone output as it interferes with CSS serving in sub-application deployment
   // Force CSS to be included
   webpack: (config, { isServer, dev }) => {
     // Ensure CSS modules are properly handled

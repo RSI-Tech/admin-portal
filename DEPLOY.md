@@ -338,7 +338,7 @@ npm install -g pm2-windows-service
    module.exports = {
      apps: [{
        name: 'admin-portal',
-       script: 'node_modules\\next\\dist\\bin\\next',
+       script: 'npm',
        args: 'start',
        cwd: 'E:\\admin-portal', // Update to match your installation path
        instances: 1,

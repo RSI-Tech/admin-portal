@@ -20,9 +20,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <head>
-        <link rel="stylesheet" href="/admin-portal/manual-styles.css" />
-      </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen bg-gray-50`}>
         <div className="min-h-screen flex flex-col">
           <Navigation />
