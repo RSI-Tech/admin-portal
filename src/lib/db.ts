@@ -32,17 +32,21 @@ function getDbConfig(): mssql.config {
     
     // Use Integrated Security (Windows Authentication) if specified, otherwise use SQL authentication
     if (config.integratedSecurity) {
-        // For Windows Authentication with mssql package
-        dbConfig.authentication = {
-            type: 'ntlm',
-            options: {
-                domain: '',
-                userName: '',
-                password: ''
-            }
-        };
-        // Some versions also need trustedConnection
-        dbConfig.options!.trustedConnection = true;
+        // For cross-domain Windows Authentication
+        if (config.domain && config.domainUsername && config.domainPassword) {
+            // Use NTLM with explicit domain credentials
+            dbConfig.authentication = {
+                type: 'ntlm',
+                options: {
+                    domain: config.domain,
+                    userName: config.domainUsername,
+                    password: config.domainPassword
+                }
+            };
+        } else {
+            // Use default Windows Authentication (same domain)
+            dbConfig.options!.trustedConnection = true;
+        }
     } else {
         dbConfig.user = config.username;
         dbConfig.password = config.password;

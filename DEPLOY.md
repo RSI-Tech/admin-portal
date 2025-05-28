@@ -142,6 +142,8 @@ cd admin-portal
    - **`integratedSecurity: true`** - Use Windows Authentication instead of username/password
 
    **For Integrated Security (Windows Authentication):**
+   
+   **Same Domain (Server and SQL on same domain):**
    ```json
    {
      "current_env": "prod",
@@ -158,10 +160,49 @@ cd admin-portal
    }
    ```
    
+   **Cross-Domain (Server and SQL on different domains):**
+   ```json
+   {
+     "current_env": "prod",
+     "environments": {
+       "prod": {
+         "name": "Production",
+         "database": "admin_portal_prod",
+         "server": "your_sql_server,1433",
+         "integratedSecurity": true,
+         "domain": "SQLDOMAIN",
+         "domainUsername": "sqluser",
+         "domainPassword": "sqlpassword",
+         "encrypt": true,
+         "trustServerCertificate": true
+       }
+     }
+   }
+   ```
+   
    **Important for Integrated Security:**
    - Remove `username` and `password` fields
    - The IIS Application Pool identity must have SQL Server access
    - Or configure the pool to run under a domain account with SQL permissions
+   
+   **Common Integrated Security Issues:**
+   1. **"Untrusted domain" error**: 
+      - Ensure the server is properly joined to the domain
+      - Configure IIS App Pool to run as a domain user with SQL access
+      - Add `trustServerCertificate: true` to bypass certificate validation
+   
+   2. **For cross-domain or workgroup scenarios**, use SQL authentication instead:
+      ```json
+      {
+        "name": "Development",
+        "username": "sql_user",
+        "password": "sql_password",
+        "database": "DEVRPEDB",
+        "server": "servername,1961",
+        "encrypt": true,
+        "trustServerCertificate": true
+      }
+      ```
 
 4. Build the application:
    ```cmd
