@@ -1,6 +1,7 @@
 import { Edit, Mail, UserPlus, X, Copy, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { apiGet } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -108,12 +109,9 @@ export function UserTable({ users, selectedUsers, toggleUser, toggleAll, allSele
     // Fetch environment information
     const fetchEnvironmentInfo = async () => {
       try {
-        const response = await fetch('./api/environment');
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentEnvironment(data.current);
-          setAvailableEnvironments(data.available);
-        }
+        const data = await apiGet('/api/environment');
+        setCurrentEnvironment(data.current);
+        setAvailableEnvironments(data.available);
       } catch (error) {
         console.error('Failed to fetch environment info:', error);
       }

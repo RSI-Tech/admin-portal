@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiGet } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Users, User, CheckCircle } from "lucide-react";
@@ -26,11 +27,8 @@ export function UserProfiles({ userKey, onProfilesChange, updatedBy, initialProf
 
   const fetchAvailableProfiles = async () => {
     try {
-      const response = await fetch('./api/profiles');
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableProfiles(data.profiles);
-      }
+      const data = await apiGet('/api/profiles');
+      setAvailableProfiles(data.profiles);
     } catch (error) {
       console.error('Failed to fetch available profiles:', error);
     }
