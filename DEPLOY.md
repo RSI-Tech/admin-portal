@@ -69,10 +69,13 @@ You can install the application in any location with appropriate permissions. Co
 - **Default IIS path**: `C:\inetpub\wwwroot\admin-portal`
 - **Custom path**: `E:\admin-portal` or any drive with sufficient space
 
-**Important**: If using a custom path, ensure the IIS_IUSRS group has read/write permissions:
+**CRITICAL**: Grant IIS_IUSRS permissions (required for ALL installations):
 ```powershell
-# Example: Grant permissions to E:\admin-portal
+# This is REQUIRED - application will not work without it
 icacls "E:\admin-portal" /grant "IIS_IUSRS:(OI)(CI)F" /T
+
+# Verify permissions were applied
+icacls "E:\admin-portal"
 ```
 
 ### Option A: Using Git (Recommended)
@@ -211,6 +214,16 @@ cd admin-portal
 
 ## Step 4: Configure IIS
 
+### Choose Deployment Method
+
+**Option A: As a Sub-Application (Recommended for multiple sites)**
+- Access via: `http://yourserver/admin-portal`
+- Shares the main site's domain/port
+
+**Option B: As a Separate Site**
+- Access via: `http://yourserver:port` or `http://admin-portal.domain.com`
+- Requires unique port or host header
+
 ### Create Application Pool
 1. Open **IIS Manager**
 2. Right-click **Application Pools** → **Add Application Pool**
@@ -224,25 +237,84 @@ cd admin-portal
 1. Select **AdminPortalPool**
 2. Click **Advanced Settings**
 3. Set:
-   - **Identity**: `ApplicationPoolIdentity`
+   - **Identity**: `ApplicationPoolIdentity` (or domain account for SQL access)
    - **Idle Time-out**: `0` (disable timeout)
    - **Start Mode**: `AlwaysRunning`
 
-### Create IIS Site
-1. Right-click **Sites** → **Add Website**
-2. Configure:
-   - **Site name**: `Admin Portal`
-   - **Application pool**: `AdminPortalPool`
-   - **Physical path**: Your installation directory (e.g., `E:\admin-portal`)
-   - **Port**: `80` (or your preferred port)
-   - **Host name**: `admin-portal.yourdomain.com` (optional)
+### Option A: Deploy as Sub-Application (Recommended)
 
-### Configure URL Rewrite Rules
-1. Select your site in IIS Manager
-2. Double-click **URL Rewrite**
-3. Click **Add Rule(s)** → **Reverse Proxy**
-4. Enter server name: `localhost:3000`
-5. Click **OK**
+**Use PowerShell (Run as Administrator):**
+
+```powershell
+# Import IIS module
+Import-Module WebAdministration
+
+# Remove existing application if it exists
+if (Get-WebApplication -Name "admin-portal" -Site "Default Web Site" -ErrorAction SilentlyContinue) {
+    Remove-WebApplication -Name "admin-portal" -Site "Default Web Site"
+}
+
+# Create the application
+New-WebApplication -Name "admin-portal" -Site "Default Web Site" -PhysicalPath "E:\admin-portal" -ApplicationPool "AdminPortalPool"
+
+# Create the web.config with correct URL rewrite rules
+$webConfig = @'
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="ProxyToNode" stopProcessing="true">
+          <match url="(.*)" />
+          <action type="Rewrite" url="http://localhost:3000/{R:0}" />
+        </rule>
+      </rules>
+    </rewrite>
+    <httpErrors existingResponse="PassThrough" />
+  </system.webServer>
+</configuration>
+'@
+
+# Write web.config to application directory
+Set-Content -Path "E:\admin-portal\web.config" -Value $webConfig
+
+# Ensure IIS_IUSRS has permissions (CRITICAL for sub-applications)
+icacls "E:\admin-portal" /grant "IIS_IUSRS:(OI)(CI)F" /T
+
+Write-Host "Sub-application created successfully!" -ForegroundColor Green
+Write-Host "Access URL: http://yourserver/admin-portal" -ForegroundColor Cyan
+```
+
+**Important Notes:**
+- The URL rewrite pattern `{R:0}` captures the entire URL (not `{R:1}`)
+- `httpErrors existingResponse="PassThrough"` ensures error messages are passed through
+- IIS_IUSRS permissions are **required** for the application to work
+
+**Important for Sub-Application Deployment**:
+- The application will be accessible at `/admin-portal` path
+- All internal links and API calls will automatically work under this path
+- Static assets will be served correctly from the sub-path
+- No code changes required in the Next.js application
+
+### Option B: Deploy as Separate Site
+
+1. **Create IIS Site**:
+   - Right-click **Sites** → **Add Website**
+   - Configure:
+     - **Site name**: `Admin Portal`
+     - **Application pool**: `AdminPortalPool`
+     - **Physical path**: Your installation directory (e.g., `E:\admin-portal`)
+     - **Port**: `8090` (or your preferred port)
+     - **Host name**: `admin-portal.yourdomain.com` (optional)
+
+2. **Configure URL Rewrite for Separate Site**:
+   - Select your site in IIS Manager
+   - Double-click **URL Rewrite**
+   - Click **Add Rule(s)** → **Reverse Proxy**
+   - Enter server name: `localhost:3000`
+   - Click **OK**
+
+3. **Access the application**: `http://yourserver:8090` or `http://admin-portal.yourdomain.com`
 
 ## Step 5: Setup as Windows Service
 
@@ -258,7 +330,7 @@ npm install -g pm2-windows-service
    module.exports = {
      apps: [{
        name: 'admin-portal',
-       script: 'npm',
+       script: 'node_modules\\next\\dist\\bin\\next',
        args: 'start',
        cwd: 'E:\\admin-portal', // Update to match your installation path
        instances: 1,
@@ -272,6 +344,8 @@ npm install -g pm2-windows-service
      }]
    };
    ```
+   
+   **Note**: Using the Next.js binary directly is more reliable than using `npm` as the script.
 
 2. Install PM2 as Windows Service:
    ```cmd
@@ -347,15 +421,43 @@ npm install -g pm2-windows-service
 - Verify PM2 service: `pm2 status`
 - Check Windows Event Logs
 
+**PM2 shows status as "stopped":**
+1. Clean PM2 installation:
+   ```powershell
+   pm2 kill
+   Remove-Item -Path "$env:USERPROFILE\.pm2" -Recurse -Force -ErrorAction SilentlyContinue
+   npm uninstall -g pm2
+   npm install -g pm2
+   ```
+2. Use Next.js binary directly in ecosystem.config.js:
+   ```javascript
+   script: 'node_modules\\next\\dist\\bin\\next'
+   ```
+3. Check PM2 logs for errors:
+   ```bash
+   pm2 logs admin-portal --lines 50
+   ```
+
 **Database connection errors:**
 - Verify SQL Server connectivity
 - Check connection.json configuration
 - Test database credentials
 
-**IIS proxy issues:**
-- Verify URL Rewrite module installation
-- Check application pool status
-- Review IIS error logs
+**IIS proxy issues / Sub-application not accessible:**
+1. **Recreate with PowerShell** (most reliable fix):
+   ```powershell
+   Remove-WebApplication -Name "admin-portal" -Site "Default Web Site"
+   New-WebApplication -Name "admin-portal" -Site "Default Web Site" -PhysicalPath "E:\admin-portal" -ApplicationPool "AdminPortalPool"
+   ```
+2. **Fix web.config**:
+   - Use `{R:0}` not `{R:1}` in rewrite rule
+   - URL should be `http://localhost:3000/{R:0}` not `http://localhost:3000/admin-portal/{R:1}`
+3. **Check permissions**:
+   ```powershell
+   icacls "E:\admin-portal" /grant "IIS_IUSRS:(OI)(CI)F" /T
+   ```
+4. Verify URL Rewrite module: `Get-WindowsFeature -Name Web-Url-Rewrite`
+5. Check application pool is running: `Get-WebAppPoolState -Name "AdminPortalPool"`
 
 **Port conflicts:**
 - Change application port in ecosystem.config.js
@@ -366,6 +468,34 @@ npm install -g pm2-windows-service
 - **Application Logs**: PM2 logs via `pm2 logs`
 - **IIS Logs**: `C:\inetpub\logs\LogFiles\`
 - **Windows Event Logs**: Event Viewer → Windows Logs → Application
+
+### PM2 Specific Troubleshooting
+
+**Common PM2 Commands:**
+```bash
+pm2 status              # Check app status
+pm2 logs admin-portal   # View logs
+pm2 describe admin-portal # Detailed info
+pm2 restart admin-portal # Restart app
+pm2 stop admin-portal   # Stop app
+pm2 delete admin-portal # Remove from PM2
+```
+
+**If PM2 service won't start:**
+```powershell
+# Run as Administrator
+pm2 kill
+pm2 resurrect
+pm2-service-uninstall
+pm2-service-install
+```
+
+**Test application without PM2:**
+```bash
+cd E:\admin-portal
+npm start
+```
+If this works but PM2 doesn't, the issue is with PM2 configuration.
 
 ## Performance Optimization
 
@@ -402,7 +532,9 @@ Save this PowerShell script as `deploy-admin-portal.ps1` for automated deploymen
 
 param(
     [string]$InstallPath = "E:\admin-portal",  # Change this to your preferred path
-    [string]$GitRepo = "https://github.com/RSI-Tech/admin-portal.git"
+    [string]$GitRepo = "https://github.com/RSI-Tech/admin-portal.git",
+    [switch]$AsSubApplication = $false,  # Deploy as IIS sub-application
+    [string]$AppAlias = "admin-portal"   # Alias for sub-application
 )
 
 Write-Host "=== Admin Portal Automated Deployment ===" -ForegroundColor Green
@@ -466,14 +598,44 @@ if (!(Test-Path "IIS:\AppPools\AdminPortalPool")) {
     Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name startMode -Value "AlwaysRunning"
 }
 
-# Step 10: Create IIS Website
-if (!(Get-Website -Name "Admin Portal" -ErrorAction SilentlyContinue)) {
-    New-Website -Name "Admin Portal" -Port 80 -PhysicalPath $InstallPath -ApplicationPool "AdminPortalPool"
-}
-
-# Step 11: Configure URL Rewrite
-$webConfigPath = Join-Path $InstallPath "web.config"
-$webConfigContent = @'
+# Step 10: Create IIS Website or Application
+if ($AsSubApplication) {
+    Write-Host "Creating as sub-application under Default Web Site..." -ForegroundColor Cyan
+    
+    # Remove existing application if it exists
+    if (Get-WebApplication -Name $AppAlias -Site "Default Web Site" -ErrorAction SilentlyContinue) {
+        Remove-WebApplication -Name $AppAlias -Site "Default Web Site"
+    }
+    
+    # Create new application
+    New-WebApplication -Name $AppAlias -Site "Default Web Site" -PhysicalPath $InstallPath -ApplicationPool "AdminPortalPool"
+    
+    # Configure URL Rewrite for sub-application
+    $webConfigContent = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="ProxyToNode" stopProcessing="true">
+          <match url="(.*)" />
+          <action type="Rewrite" url="http://localhost:3000/{R:0}" />
+        </rule>
+      </rules>
+    </rewrite>
+    <httpErrors existingResponse="PassThrough" />
+  </system.webServer>
+</configuration>
+"@
+} else {
+    Write-Host "Creating as separate website..." -ForegroundColor Cyan
+    
+    if (!(Get-Website -Name "Admin Portal" -ErrorAction SilentlyContinue)) {
+        New-Website -Name "Admin Portal" -Port 80 -PhysicalPath $InstallPath -ApplicationPool "AdminPortalPool"
+    }
+    
+    # Configure URL Rewrite for separate site
+    $webConfigContent = @'
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <system.webServer>
@@ -488,6 +650,10 @@ $webConfigContent = @'
   </system.webServer>
 </configuration>
 '@
+}
+
+# Step 11: Write web.config
+$webConfigPath = Join-Path $InstallPath "web.config"
 Set-Content -Path $webConfigPath -Value $webConfigContent
 
 # Step 12: Configure Firewall
@@ -501,7 +667,7 @@ $ecosystemContent = @"
 module.exports = {
   apps: [{
     name: 'admin-portal',
-    script: 'npm',
+    script: 'node_modules\\\\next\\\\dist\\\\bin\\\\next',
     args: 'start',
     cwd: '$($InstallPath -replace "\\", "\\\\")',
     instances: 1,
@@ -519,6 +685,13 @@ Set-Content -Path $ecosystemPath -Value $ecosystemContent
 
 Write-Host "`n=== Deployment Complete ===" -ForegroundColor Green
 Write-Host "Installation Path: $InstallPath" -ForegroundColor Cyan
+
+if ($AsSubApplication) {
+    Write-Host "Access URL: http://localhost/$AppAlias" -ForegroundColor Cyan
+} else {
+    Write-Host "Access URL: http://localhost" -ForegroundColor Cyan
+}
+
 Write-Host "`nNext steps:" -ForegroundColor Yellow
 Write-Host "1. Create connection.json with your database credentials"
 Write-Host "2. Run 'pm2 start ecosystem.config.js' to start the application"
@@ -528,14 +701,17 @@ Write-Host "4. Configure SSL certificate in IIS for HTTPS"
 
 Run the script:
 ```powershell
-# Run as Administrator with default path (E:\admin-portal)
+# Deploy as a sub-application under Default Web Site (recommended for multiple sites)
+.\deploy-admin-portal.ps1 -AsSubApplication
+
+# Deploy as a sub-application with custom alias
+.\deploy-admin-portal.ps1 -AsSubApplication -AppAlias "portal"
+
+# Deploy as a separate site (default behavior)
 .\deploy-admin-portal.ps1
 
-# Or specify a custom installation path
-.\deploy-admin-portal.ps1 -InstallPath "D:\Applications\admin-portal"
-
-# Or use the default IIS path
-.\deploy-admin-portal.ps1 -InstallPath "C:\inetpub\wwwroot\admin-portal"
+# Deploy to custom path as sub-application
+.\deploy-admin-portal.ps1 -InstallPath "D:\Applications\admin-portal" -AsSubApplication
 ```
 
 ## Contact
