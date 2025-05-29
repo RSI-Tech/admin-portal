@@ -27,11 +27,9 @@ REM Run diagnostics first
 echo Running diagnostics...
 python diagnose.py
 echo.
-echo Press any key to continue with server startup...
-pause > nul
+echo Starting server automatically...
+timeout /t 2 /nobreak > nul
 
 REM Run the server
 echo Running FastAPI server on http://localhost:8000
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-pause

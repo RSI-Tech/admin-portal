@@ -17,8 +17,8 @@ Write-Host ""
 Write-Host "Running diagnostics..." -ForegroundColor Yellow
 python diagnose.py
 Write-Host ""
-Write-Host "Press any key to continue with server startup..." -ForegroundColor Green
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "Starting server automatically..." -ForegroundColor Green
+Start-Sleep -Seconds 2
 
 # Run the server
 Write-Host "Running FastAPI server on http://localhost:8000" -ForegroundColor Green
