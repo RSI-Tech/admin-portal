@@ -2,19 +2,43 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { environmentApi } from '../lib/api';
 
+interface Environment {
+  key: string;
+  name: string;
+  server: string;
+  database: string;
+}
+
 export default function Navigation() {
   const [environment, setEnvironment] = useState('dev');
+  const [availableEnvironments, setAvailableEnvironments] = useState<Environment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadEnvironment();
+    loadData();
   }, []);
 
-  const loadEnvironment = async () => {
+  const loadData = async () => {
     try {
-      const data = await environmentApi.getEnvironment();
-      setEnvironment(data.environment);
+      // Load both current environment and available environments
+      const [currentEnv, environments] = await Promise.all([
+        environmentApi.getEnvironment(),
+        environmentApi.getEnvironments()
+      ]);
+      
+      setEnvironment(currentEnv.environment);
+      setAvailableEnvironments(environments.environments);
     } catch (error) {
-      console.error('Failed to load environment:', error);
+      console.error('Failed to load environment data:', error);
+      // Fallback to hardcoded environments if API fails
+      setAvailableEnvironments([
+        { key: 'dev', name: 'Development', server: '', database: '' },
+        { key: 'int', name: 'Integration', server: '', database: '' },
+        { key: 'test', name: 'Test', server: '', database: '' },
+        { key: 'prod', name: 'Production', server: '', database: '' }
+      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,6 +59,7 @@ export default function Navigation() {
       case 'int': return 'env-badge-int';
       case 'test': return 'env-badge-test';
       case 'prod': return 'env-badge-prod';
+      case 'sbx': return 'env-badge-dev'; // Sandbox uses dev styling
       default: return 'env-badge-dev';
     }
   };
@@ -59,11 +84,17 @@ export default function Navigation() {
                 value={environment}
                 onChange={(e) => handleEnvironmentChange(e.target.value)}
                 className="text-sm"
+                disabled={loading}
               >
-                <option value="dev">Development</option>
-                <option value="int">Integration</option>
-                <option value="test">Test</option>
-                <option value="prod">Production</option>
+                {loading ? (
+                  <option>Loading...</option>
+                ) : (
+                  availableEnvironments.map((env) => (
+                    <option key={env.key} value={env.key}>
+                      {env.name}
+                    </option>
+                  ))
+                )}
               </select>
               <span className={getEnvironmentBadgeClass(environment)}>
                 {environment.toUpperCase()}

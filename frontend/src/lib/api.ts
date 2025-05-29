@@ -114,6 +114,12 @@ export const environmentApi = {
     return response.data;
   },
 
+  // Get all available environments
+  getEnvironments: async () => {
+    const response = await api.get('/api/environment/list');
+    return response.data;
+  },
+
   // Set environment
   setEnvironment: async (environment: string) => {
     const response = await api.post('/api/environment/', { environment });
