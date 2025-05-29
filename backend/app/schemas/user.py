@@ -1,7 +1,30 @@
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List, Any, Dict
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional, List, Any, Dict, Union
 from datetime import datetime
 from app.core.field_config import get_mandatory_field_names, get_field_defaults
+
+
+def parse_datetime_or_string(value: Any) -> Optional[Union[datetime, str]]:
+    """Parse datetime fields that might contain 'N' or other non-date values"""
+    if value is None or value == 'N' or value == '':
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            # Try to parse as datetime
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except:
+            # If it fails, return None
+            return None
+    return None
+
+
+def parse_email_or_string(value: Any) -> Optional[str]:
+    """Parse email fields that might contain placeholder values"""
+    if value is None or value == '' or value == 'EMAIL':
+        return None
+    return str(value)
 
 
 class UserBase(BaseModel):
@@ -28,7 +51,7 @@ class UserBase(BaseModel):
     USER_LEVEL: Optional[str] = Field(None, max_length=20)
     EMPLOYEE_ID: Optional[str] = Field(None, max_length=30)
     TITLE: Optional[str] = Field(None, max_length=30)
-    EMAIL_ADDRESS: Optional[EmailStr] = Field(None, max_length=1024)
+    EMAIL_ADDRESS: Optional[str] = Field(None, max_length=1024)
     MOBILE_PHONE_NUMBER: Optional[str] = Field(None, max_length=20)
     CASE_QUEUE_MAX: Optional[int] = Field(default=0)
     RESTRICT_CASE_CREATION: Optional[str] = Field(default="N", max_length=1)
@@ -37,18 +60,38 @@ class UserBase(BaseModel):
     CORE: Optional[int] = None
     ENABLE_MFA: Optional[str] = Field(default="Y", max_length=1)
     
-    @validator("STATUS")
-    def validate_status(cls, v):
-        valid_statuses = ["Active", "Inactive", "Suspended", "Pending"]
-        if v not in valid_statuses:
-            raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
-        return v
+    @field_validator("STATUS")
+    @classmethod
+    def normalize_status(cls, v):
+        """Normalize status values from database"""
+        if v is None:
+            return None
+        # Map common abbreviations to full status
+        status_map = {
+            'A': 'Active',
+            'I': 'Inactive',
+            'S': 'Suspended',
+            'P': 'Pending',
+            'ACTIVE': 'Active',
+            'INACTIVE': 'Inactive',
+            'SUSPENDED': 'Suspended',
+            'PENDING': 'Pending'
+        }
+        v_upper = str(v).upper().strip()
+        return status_map.get(v_upper, v)
     
-    @validator("ENABLE_MFA", "RESTRICT_CASE_CREATION")
+    @field_validator("EMAIL_ADDRESS", mode='before')
+    @classmethod
+    def validate_email(cls, v):
+        """Handle invalid email placeholders"""
+        return parse_email_or_string(v)
+    
+    @field_validator("ENABLE_MFA", "RESTRICT_CASE_CREATION")
+    @classmethod
     def validate_yn_fields(cls, v):
-        if v and v not in ["Y", "N"]:
-            raise ValueError("Value must be 'Y' or 'N'")
-        return v
+        if v and v not in ["Y", "N", "y", "n"]:
+            return "N"  # Default to N if invalid
+        return v.upper() if v else "N"
 
 
 class UserCreate(UserBase):
@@ -79,7 +122,7 @@ class UserUpdate(BaseModel):
     USER_LEVEL: Optional[str] = Field(None, max_length=20)
     EMPLOYEE_ID: Optional[str] = Field(None, max_length=30)
     TITLE: Optional[str] = Field(None, max_length=30)
-    EMAIL_ADDRESS: Optional[EmailStr] = Field(None, max_length=1024)
+    EMAIL_ADDRESS: Optional[str] = Field(None, max_length=1024)
     MOBILE_PHONE_NUMBER: Optional[str] = Field(None, max_length=20)
     CASE_QUEUE_MAX: Optional[int] = None
     RESTRICT_CASE_CREATION: Optional[str] = Field(None, max_length=1)
@@ -95,26 +138,48 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     """Schema for user response including system fields"""
     USER_KEY: int
-    UPDATED_DATE: datetime
+    UPDATED_DATE: Optional[datetime] = None
     EFFECTIVE_BEGIN_DT: Optional[datetime] = None
     PASSWORD_CHANGED_DATE: Optional[datetime] = None
     LOGGED_IN_FLAG: Optional[str] = None
     OVERRIDE_PROHIBIT_FLAG: Optional[str] = None
-    IGNORE_LOGIN_DATE: Optional[datetime] = None
+    IGNORE_LOGIN_DATE: Optional[Union[datetime, str]] = None
+    
+    @field_validator("UPDATED_DATE", "EFFECTIVE_BEGIN_DT", "PASSWORD_CHANGED_DATE", mode='before')
+    @classmethod
+    def parse_dates(cls, v):
+        """Handle datetime fields"""
+        return parse_datetime_or_string(v)
+    
+    @field_validator("IGNORE_LOGIN_DATE", mode='before')
+    @classmethod
+    def parse_ignore_login_date(cls, v):
+        """Handle IGNORE_LOGIN_DATE which might be 'N' or a date"""
+        if v == 'N' or v == 'n':
+            return None
+        return parse_datetime_or_string(v)
     
     class Config:
         from_attributes = True
+        # Allow arbitrary types for datetime handling
+        arbitrary_types_allowed = True
 
 
 class UserStatusUpdate(BaseModel):
     """Schema for updating user status"""
     status: str
     
-    @validator("status")
+    @field_validator("status")
+    @classmethod
     def validate_status(cls, v):
-        valid_statuses = ["Active", "Inactive"]
+        valid_statuses = ["Active", "Inactive", "A", "I"]
         if v not in valid_statuses:
             raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
+        # Normalize to full status
+        if v == "A":
+            return "Active"
+        elif v == "I":
+            return "Inactive"
         return v
 
 
