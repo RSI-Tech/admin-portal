@@ -526,6 +526,78 @@ Your application will be accessible at:
 - **Main Application**: `https://yourserver/admin-portal/`
 - **API Documentation**: `https://yourserver/admin-portal/docs`
 
+## Frontend-Only Deployment
+
+When you only need to deploy frontend changes (no backend modifications), follow these streamlined steps:
+
+### Quick Frontend Update Steps
+
+1. **Pull Latest Code**
+   ```powershell
+   cd E:\admin-portal
+   git pull
+   ```
+
+2. **Build Frontend**
+   ```powershell
+   cd E:\admin-portal\frontend
+   npm install  # Only if package.json changed
+   npm run build
+   ```
+
+3. **Deploy to IIS**
+   ```powershell
+   # Copy built files to IIS directory (preserves permissions)
+   robocopy "E:\admin-portal\frontend\dist" "C:\inetpub\wwwroot\admin-portal" /E /MIR
+   ```
+
+4. **Clear Browser Cache** (Important!)
+   - Users may need to hard refresh (Ctrl+F5) to see changes
+   - Or clear browser cache for the site
+
+### Automated Frontend Deployment Script
+
+Save as `deploy-frontend-only.ps1`:
+
+```powershell
+param(
+    [string]$InstallPath = "E:\admin-portal",
+    [string]$IISPath = "C:\inetpub\wwwroot\admin-portal"
+)
+
+Write-Host "=== Frontend-Only Deployment ===" -ForegroundColor Green
+
+# Pull latest code
+cd $InstallPath
+Write-Host "Pulling latest code..." -ForegroundColor Yellow
+git pull
+
+# Build frontend
+cd "$InstallPath\frontend"
+Write-Host "Building frontend..." -ForegroundColor Yellow
+npm install  # In case dependencies changed
+npm run build
+
+# Deploy to IIS
+Write-Host "Deploying to IIS..." -ForegroundColor Yellow
+robocopy "$InstallPath\frontend\dist" $IISPath /E /MIR
+
+# Display results
+if ($LASTEXITCODE -le 7) {
+    Write-Host "`n✓ Frontend deployment successful!" -ForegroundColor Green
+    Write-Host "Application URL: http://localhost/admin-portal/" -ForegroundColor Cyan
+    Write-Host "`nReminder: Users may need to clear browser cache (Ctrl+F5)" -ForegroundColor Yellow
+} else {
+    Write-Host "`n✗ Deployment failed with exit code: $LASTEXITCODE" -ForegroundColor Red
+}
+```
+
+### Notes
+- No need to restart IIS or the backend service for frontend changes
+- The `/MIR` flag ensures exact mirroring (removes old files)
+- Existing IIS permissions are preserved
+- Backend service (AdminPortalBackend) continues running uninterrupted
+
 ## Contact
 
 For deployment support:
