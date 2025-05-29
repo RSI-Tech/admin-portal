@@ -76,7 +76,7 @@ async def get_users(
         total = result[0] if result else 0
         
         # Add pagination
-        base_query += " ORDER BY u.USER_KEY DESC"
+        base_query += " ORDER BY u.USER_KEY ASC"
         base_query += " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"
         params.extend([skip, limit])
         
