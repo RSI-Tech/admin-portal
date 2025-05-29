@@ -213,6 +213,40 @@ npm install -g pm2
 npm install -g pm2-windows-service
 ```
 
+### Create Backend Startup Script
+Create `start-backend.ps1` in the backend directory:
+
+```powershell
+# PowerShell script to run the FastAPI server with proper environment setup
+
+Write-Host "Starting Admin Portal Backend..." -ForegroundColor Green
+Write-Host ""
+
+# Set Python path
+$env:PYTHONPATH = $PWD.Path
+Write-Host "PYTHONPATH set to: $env:PYTHONPATH" -ForegroundColor Yellow
+
+# Activate virtual environment if it exists
+if (Test-Path "venv\Scripts\Activate.ps1") {
+    Write-Host "Activating virtual environment..." -ForegroundColor Yellow
+    & ".\venv\Scripts\Activate.ps1"
+}
+
+# Show current directory and Python version
+Write-Host "Current directory: $PWD" -ForegroundColor Cyan
+python --version
+Write-Host ""
+
+# Run diagnostics
+Write-Host "Running diagnostics..." -ForegroundColor Yellow
+python diagnose.py
+Write-Host ""
+
+# Run the server (production mode - no reload)
+Write-Host "Running FastAPI server on http://localhost:8000" -ForegroundColor Green
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
 ### Create PM2 Configuration
 Create `ecosystem.config.js` in the application root:
 
@@ -221,16 +255,13 @@ module.exports = {
   apps: [
     {
       name: 'admin-portal-backend',
-      script: 'python',
-      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+      script: 'powershell.exe',
+      args: '-ExecutionPolicy Bypass -File start-backend.ps1',
       cwd: 'E:\\admin-portal\\backend',
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
-      env: {
-        PYTHONPATH: 'E:\\admin-portal\\backend'
-      }
+      max_memory_restart: '1G'
     },
     {
       name: 'admin-portal-frontend',
