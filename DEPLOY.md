@@ -119,11 +119,22 @@ Create `connection.json` in the application root:
 ```powershell
 Import-Module WebAdministration
 
+# Remove existing application pool if it exists
+if (Get-WebAppPool -Name "AdminPortalPool" -ErrorAction SilentlyContinue) {
+    Remove-WebAppPool -Name "AdminPortalPool"
+}
+
 # Create application pool
 New-WebAppPool -Name "AdminPortalPool"
-Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name processIdentity.identityType -Value ApplicationPoolIdentity
-Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name recycling.periodicRestart.time -Value 0
+
+# Configure application pool settings
+Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name processModel.identityType -Value ApplicationPoolIdentity
+Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name recycling.periodicRestart.time -Value "00:00:00"
 Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name startMode -Value "AlwaysRunning"
+
+# Verify settings
+Write-Host "Application pool created successfully!" -ForegroundColor Green
+Get-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" | Select-Object name, startMode, processModel, recycling
 ```
 
 ### Create Sub-Application
@@ -300,12 +311,13 @@ npm install -g pm2 pm2-windows-service
 Import-Module WebAdministration
 
 # Create application pool
-if (!(Test-Path "IIS:\AppPools\AdminPortalPool")) {
-    New-WebAppPool -Name "AdminPortalPool"
-    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name processIdentity.identityType -Value ApplicationPoolIdentity
-    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name recycling.periodicRestart.time -Value 0
-    Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name startMode -Value "AlwaysRunning"
+if (Get-WebAppPool -Name "AdminPortalPool" -ErrorAction SilentlyContinue) {
+    Remove-WebAppPool -Name "AdminPortalPool"
 }
+New-WebAppPool -Name "AdminPortalPool"
+Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name processModel.identityType -Value ApplicationPoolIdentity
+Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name recycling.periodicRestart.time -Value "00:00:00"
+Set-ItemProperty -Path "IIS:\AppPools\AdminPortalPool" -Name startMode -Value "AlwaysRunning"
 
 # Remove existing application if it exists
 if (Get-WebApplication -Name $AppAlias -Site "Default Web Site" -ErrorAction SilentlyContinue) {
