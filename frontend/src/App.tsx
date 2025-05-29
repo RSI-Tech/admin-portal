@@ -8,7 +8,7 @@ import AppLayout from './components/layout/AppLayout';
 
 function App() {
   return (
-    <Router basename="/admin-portal">
+    <Router basename={import.meta.env.BASE_URL}>
       <AppLayout>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />

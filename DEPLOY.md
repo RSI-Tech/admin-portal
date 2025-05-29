@@ -128,48 +128,12 @@ Get-Service AdminPortalBackend
 
 ## Step 4: Configure Frontend
 
-### Build React Application for Sub-Path
-
-First, update the Vite configuration for sub-application deployment:
+### Build React Application
 
 ```powershell
 cd E:\admin-portal\frontend
 
-# Create or update vite.config.ts
-@'
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig(({ mode }) => ({
-  plugins: [react()],
-  base: mode === 'production' ? '/admin-portal/' : '/',
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets'
-  }
-}));
-'@ | Out-File -FilePath "vite.config.ts" -Encoding UTF8
-```
-
-### Update React Router for Sub-Path
-
-Update your main React app file to use the correct basename:
-
-```typescript
-// In your main.tsx or App.tsx
-import { BrowserRouter } from "react-router-dom";
-
-root.render(
-  <BrowserRouter basename={import.meta.env.BASE_URL}>
-    <App />
-  </BrowserRouter>
-);
-```
-
-### Build the Frontend
-
-```powershell
-# Install dependencies and build
+# Install dependencies and build for production
 npm install
 npm run build
 
