@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fieldConfig, FieldConfig } from '../lib/field-config';
+import { fieldConfig } from '../lib/field-config';
 import { userApi } from '../lib/api';
+
+interface FieldConfig {
+  name: string;
+  type: 'text' | 'email' | 'tel' | 'number' | 'select';
+  maxLength?: number;
+  label: string;
+  options?: (string | { value: string; label: string })[];
+}
 
 interface User {
   USER_KEY?: number;
@@ -81,7 +89,7 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
     }
   };
 
-  const renderField = (field: FieldConfig) => {
+  const renderField = (field: FieldConfig, isMandatory: boolean = false) => {
     const value = formData[field.name] || '';
 
     const fieldClasses = "block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6";
@@ -93,7 +101,7 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
           value={value}
           onChange={(e) => handleInputChange(field.name, e.target.value)}
           className={fieldClasses}
-          required={fieldConfig.mandatory.includes(field)}
+          required={isMandatory}
         >
           <option value="">Select {field.label}</option>
           {field.options?.map((option) => {
@@ -115,7 +123,7 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
         onChange={(e) => handleInputChange(field.name, field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
         maxLength={field.maxLength}
         className={fieldClasses}
-        required={fieldConfig.mandatory.includes(field)}
+        required={isMandatory}
         placeholder={`Enter ${field.label}`}
       />
     );
@@ -187,7 +195,7 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
                     {field.label} <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-2">
-                    {renderField(field)}
+                    {renderField(field, true)}
                   </div>
                 </div>
               ))}
@@ -212,7 +220,7 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
                     {field.label}
                   </label>
                   <div className="mt-2">
-                    {renderField(field)}
+                    {renderField(field, false)}
                   </div>
                 </div>
               ))}
