@@ -103,4 +103,7 @@ backend/
 - Deploy to Windows Server 2019
 - Use virtual environments
 - Document all dependencies in requirements.txt
+- Use NSSM (Non-Sucking Service Manager) for Windows Service deployment
+- Run as Windows Service for production reliability
+- Integrate with IIS for reverse proxy and HTTPS termination
 - Provide clear deployment instructions
