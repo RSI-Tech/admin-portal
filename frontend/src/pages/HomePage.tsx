@@ -78,6 +78,10 @@ export default function HomePage() {
   const hasActiveFilters = search || filters.status || filters.user_type;
 
   const handleStatusToggle = async (userKey: number, currentStatus: string) => {
+    // Don't allow toggling Unknown status
+    if (currentStatus === 'Unknown') {
+      return;
+    }
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     try {
       await userApi.updateUserStatus(userKey, newStatus);
@@ -255,27 +259,33 @@ export default function HomePage() {
                         {user.EMAIL_ADDRESS || '-'}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <button
-                          onClick={() => handleStatusToggle(user.USER_KEY, user.STATUS)}
-                          className={`toggle-switch ${
-                            user.STATUS === 'Active' 
-                              ? 'toggle-switch-active' 
-                              : 'toggle-switch-inactive'
-                          }`}
-                        >
-                          <span 
-                            className={`toggle-switch-thumb ${
-                              user.STATUS === 'Active'
-                                ? 'toggle-switch-thumb-active'
-                                : 'toggle-switch-thumb-inactive'
-                            }`}
-                          />
-                        </button>
-                        <span className={`ml-2 ${
-                          user.STATUS === 'Active' ? 'text-green-600' : 'text-gray-500'
-                        }`}>
-                          {user.STATUS}
-                        </span>
+                        {user.STATUS === 'Unknown' ? (
+                          <span className="text-gray-400 italic">Unknown</span>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleStatusToggle(user.USER_KEY, user.STATUS)}
+                              className={`toggle-switch ${
+                                user.STATUS === 'Active' 
+                                  ? 'toggle-switch-active' 
+                                  : 'toggle-switch-inactive'
+                              }`}
+                            >
+                              <span 
+                                className={`toggle-switch-thumb ${
+                                  user.STATUS === 'Active'
+                                    ? 'toggle-switch-thumb-active'
+                                    : 'toggle-switch-thumb-inactive'
+                                }`}
+                              />
+                            </button>
+                            <span className={`ml-2 ${
+                              user.STATUS === 'Active' ? 'text-green-600' : 'text-gray-500'
+                            }`}>
+                              {user.STATUS}
+                            </span>
+                          </>
+                        )}
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <Link

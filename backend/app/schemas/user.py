@@ -31,7 +31,7 @@ class UserBase(BaseModel):
     USER_ID: str = Field(..., max_length=128)
     FIRST_NAME: str = Field(..., max_length=20)
     LAST_NAME: str = Field(..., max_length=20)
-    STATUS: str = Field(..., max_length=25)
+    STATUS: Optional[str] = Field(None, max_length=25)
     UPDATED_BY: str = Field(..., max_length=128)
     
     # Optional fields
@@ -65,7 +65,7 @@ class UserBase(BaseModel):
     def normalize_status(cls, v):
         """Normalize status values from database"""
         if v is None:
-            return None
+            return "Unknown"  # Return a default status for NULL values
         # Map common abbreviations to full status
         status_map = {
             'A': 'Active',
