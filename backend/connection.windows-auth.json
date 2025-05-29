@@ -1,0 +1,32 @@
+{
+  "dev": {
+    "server": "dor9vd-sqis001.kydev.dev.ky.gov,1961",
+    "database": "DEVRPEDB",
+    "options": {
+      "trustServerCertificate": true,
+      "encrypt": true
+    }
+  },
+  "sbx": {
+    "server": "dor9vd-sqis001.kydev.dev.ky.gov,1961",
+    "database": "SBXRPEDB",
+    "options": {
+      "trustServerCertificate": true,
+      "encrypt": true
+    }
+  },
+  "test": {
+    "server": "test-server",
+    "database": "TESTRPEDB",
+    "options": {
+      "trustServerCertificate": true
+    }
+  },
+  "prod": {
+    "server": "prod-server",
+    "database": "PRODRPEDB",
+    "options": {
+      "trustServerCertificate": true
+    }
+  }
+}

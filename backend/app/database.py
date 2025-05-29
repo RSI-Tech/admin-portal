@@ -56,16 +56,14 @@ class DatabaseConnection:
         
         # Authentication
         if settings.use_windows_auth:
-            # Windows Authentication
-            if "domain" in config and config["domain"]:
-                conn_str_parts.append(f"UID={config['domain']}\\{config['user']}")
-            else:
-                conn_str_parts.append(f"UID={settings.domain}\\{config['user']}")
-            conn_str_parts.append(f"PWD={config['password']}")
+            # True Windows Authentication - uses current logged-in user
+            conn_str_parts.append("Trusted_Connection=yes")
+            logger.info("Using Windows Authentication (current user)")
         else:
             # SQL Server Authentication
             conn_str_parts.append(f"UID={config['user']}")
             conn_str_parts.append(f"PWD={config['password']}")
+            logger.info("Using SQL Server Authentication")
         
         # Additional options
         if "options" in config:
