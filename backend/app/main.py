@@ -21,7 +21,14 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost",
+        "https://localhost",
+        "https://sbx.rpe.doris.dor.ky.gov",
+        "http://sbx.rpe.doris.dor.ky.gov"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
