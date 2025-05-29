@@ -1,14 +1,25 @@
 # RSI Admin Portal - Backend (FastAPI)
 
-## Setup
+## Cross-Platform Development & Deployment
 
-### Prerequisites for Windows Server 2019
-1. **Install Python 3.11+** from https://www.python.org/downloads/
+This backend supports development on macOS/Linux and deployment on Windows Server 2019.
+
+## Prerequisites
+
+### For macOS Development
+1. **Python 3.10+**
+2. **Microsoft ODBC Driver 17 for SQL Server**
+   - Install using the provided script: `./install_odbc_mac.sh`
+   - Or manually via Homebrew
+
+### For Windows Server 2019 Deployment
+1. **Python 3.10+** from https://www.python.org/downloads/
    - Check "Add Python to PATH" during installation
    - Verify: `python --version`
 
-2. **Install SQL Server ODBC Driver** (if using pyodbc):
-   - Download from Microsoft: "ODBC Driver 17 for SQL Server"
+2. **Microsoft ODBC Driver 17 for SQL Server**
+   - Usually pre-installed on Windows Server
+   - If not, download from Microsoft
 
 ### Development Setup
 
@@ -42,10 +53,7 @@
 
 ### Option 1: Windows Service (Recommended)
 
-1. **Install additional dependencies:**
-   ```cmd
-   pip install pywin32
-   ```
+1. **Note: pywin32 is NOT required** - We use standard Python for cross-platform compatibility
 
 2. **Install as Windows Service:**
    ```cmd

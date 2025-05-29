@@ -3,8 +3,7 @@ uvicorn[standard]==0.24.0
 python-dotenv==1.0.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
-pymssql==2.2.10
+pyodbc==5.0.1
 python-multipart==0.0.6
 pytest==7.4.3
 httpx==0.25.2
-pywin32==306; sys_platform == "win32"  # For Windows service support

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any
 from pydantic import BaseModel
-import pymssql
+import pyodbc
 import logging
 from datetime import datetime
-from app.database import get_db, db as database_instance
+from app.database import get_db, row_to_dict, db as database_instance
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class UserProfileUpdate(BaseModel):
 
 
 @router.get("/", response_model=List[Profile])
-async def get_profiles(conn: pymssql.Connection = Depends(get_db)):
+async def get_profiles(conn: pyodbc.Connection = Depends(get_db)):
     """Get all distinct profiles with user counts"""
     try:
         cursor = conn.cursor()
@@ -42,7 +42,10 @@ async def get_profiles(conn: pymssql.Connection = Depends(get_db)):
         """
         
         cursor.execute(query)
-        profiles = cursor.fetchall()
+        rows = cursor.fetchall()
+        
+        # Convert rows to dictionaries
+        profiles = [row_to_dict(cursor, row) for row in rows]
         
         return profiles
         
@@ -54,7 +57,7 @@ async def get_profiles(conn: pymssql.Connection = Depends(get_db)):
 @router.get("/users/{user_key}", response_model=List[UserProfile])
 async def get_user_profiles(
     user_key: int,
-    conn: pymssql.Connection = Depends(get_db)
+    conn: pyodbc.Connection = Depends(get_db)
 ):
     """Get profiles assigned to a specific user"""
     try:
@@ -68,7 +71,10 @@ async def get_user_profiles(
         """
         
         cursor.execute(query, (user_key,))
-        profiles = cursor.fetchall()
+        rows = cursor.fetchall()
+        
+        # Convert rows to dictionaries
+        profiles = [row_to_dict(cursor, row) for row in rows]
         
         return profiles
         
@@ -88,19 +94,19 @@ async def update_user_profiles(
             cursor = conn.cursor()
             
             # Check if user exists
-            cursor.execute("SELECT USER_KEY FROM USERS WHERE USER_KEY = %s", (user_key,))
+            cursor.execute("SELECT USER_KEY FROM USERS WHERE USER_KEY = ?", (user_key,))
             if not cursor.fetchone():
                 raise HTTPException(status_code=404, detail="User not found")
             
             # Delete existing profiles
-            cursor.execute("DELETE FROM USER_TO_PROFILE WHERE USER_KEY = %s", (user_key,))
+            cursor.execute("DELETE FROM USER_TO_PROFILE WHERE USER_KEY = ?", (user_key,))
             
             # Insert new profiles
             if profile_update.profile_ids:
                 for profile_id in profile_update.profile_ids:
                     cursor.execute("""
                         INSERT INTO USER_TO_PROFILE (USER_KEY, PROFILE_ID, UPDATED_DATE, UPDATED_BY)
-                        VALUES (%s, %s, GETDATE(), %s)
+                        VALUES (?, ?, GETDATE(), ?)
                     """, (user_key, profile_id, profile_update.updated_by))
             
             return {
@@ -119,7 +125,7 @@ async def update_user_profiles(
 async def remove_user_profile(
     user_key: int,
     profile_id: str,
-    conn: pymssql.Connection = Depends(get_db)
+    conn: pyodbc.Connection = Depends(get_db)
 ):
     """Remove a specific profile from a user"""
     try:
@@ -127,7 +133,7 @@ async def remove_user_profile(
         
         cursor.execute("""
             DELETE FROM USER_TO_PROFILE 
-            WHERE USER_KEY = %s AND PROFILE_ID = %s
+            WHERE USER_KEY = ? AND PROFILE_ID = ?
         """, (user_key, profile_id))
         
         if cursor.rowcount == 0:

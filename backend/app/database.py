@@ -1,4 +1,4 @@
-import pymssql
+import pyodbc
 from contextlib import contextmanager
 from typing import Generator, Dict, Any
 import logging
@@ -13,38 +13,53 @@ class DatabaseConnection:
     def __init__(self):
         self._connection_cache = {}
         
-    def _create_connection(self, config: Dict[str, Any]) -> pymssql.Connection:
-        """Create a new database connection"""
-        connection_params = {
-            "server": config["server"],
-            "database": config["database"],
-            "charset": "utf8",
-            "as_dict": True,
-            "autocommit": False
-        }
+    def _create_connection_string(self, config: Dict[str, Any]) -> str:
+        """Create ODBC connection string"""
+        # Base connection parameters
+        conn_str_parts = [
+            f"DRIVER={{ODBC Driver 17 for SQL Server}}",
+            f"SERVER={config['server']}",
+            f"DATABASE={config['database']}"
+        ]
         
+        # Authentication
         if settings.use_windows_auth:
-            # Cross-domain Windows Authentication
+            # Windows Authentication
             if "domain" in config and config["domain"]:
-                connection_params["user"] = f"{config['domain']}\\{config['user']}"
+                conn_str_parts.append(f"UID={config['domain']}\\{config['user']}")
             else:
-                connection_params["user"] = f"{settings.domain}\\{config['user']}"
-            connection_params["password"] = config["password"]
+                conn_str_parts.append(f"UID={settings.domain}\\{config['user']}")
+            conn_str_parts.append(f"PWD={config['password']}")
         else:
             # SQL Server Authentication
-            connection_params["user"] = config["user"]
-            connection_params["password"] = config["password"]
+            conn_str_parts.append(f"UID={config['user']}")
+            conn_str_parts.append(f"PWD={config['password']}")
         
-        # Add optional parameters
+        # Additional options
         if "options" in config:
-            if "trustServerCertificate" in config["options"]:
-                connection_params["tds_version"] = "7.4"
+            if config["options"].get("trustServerCertificate", False):
+                conn_str_parts.append("TrustServerCertificate=yes")
                 
+        return ";".join(conn_str_parts)
+        
+    def _create_connection(self, config: Dict[str, Any]) -> pyodbc.Connection:
+        """Create a new database connection"""
+        connection_string = self._create_connection_string(config)
+        
         logger.info(f"Connecting to database: {config['server']}/{config['database']}")
-        return pymssql.connect(**connection_params)
+        
+        # Create connection with row factory for dict-like access
+        conn = pyodbc.connect(connection_string)
+        
+        # Configure connection for better compatibility
+        conn.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
+        conn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+        conn.setencoding(encoding='utf-8')
+        
+        return conn
     
     @contextmanager
-    def get_db(self) -> Generator[pymssql.Connection, None, None]:
+    def get_db(self) -> Generator[pyodbc.Connection, None, None]:
         """Get database connection context manager"""
         config = settings.get_db_config()
         conn = None
@@ -63,7 +78,7 @@ class DatabaseConnection:
                 conn.close()
                 
     @contextmanager
-    def transaction(self) -> Generator[pymssql.Connection, None, None]:
+    def transaction(self) -> Generator[pyodbc.Connection, None, None]:
         """Get database connection with explicit transaction management"""
         with self.get_db() as conn:
             try:
@@ -82,3 +97,11 @@ def get_db():
     """Dependency for FastAPI routes"""
     with db.get_db() as conn:
         yield conn
+
+
+def row_to_dict(cursor, row):
+    """Convert pyodbc row to dictionary"""
+    if row is None:
+        return None
+    columns = [column[0] for column in cursor.description]
+    return dict(zip(columns, row))
