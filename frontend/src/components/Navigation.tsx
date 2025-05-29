@@ -70,7 +70,7 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="text-xl font-semibold text-gray-900">
-              Admin Portal
+              Government Premier
             </Link>
           </div>
           
