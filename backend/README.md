@@ -7,13 +7,16 @@ This backend supports development on macOS/Linux and deployment on Windows Serve
 ## Prerequisites
 
 ### For macOS Development
-1. **Python 3.10+**
+1. **Python 3.12** (recommended version)
+   - Install via Homebrew: `brew install python@3.12`
+   - Or download from https://www.python.org/downloads/
 2. **Microsoft ODBC Driver 17 for SQL Server**
    - Install using the provided script: `./install_odbc_mac.sh`
    - Or manually via Homebrew
 
 ### For Windows Server 2019 Deployment
-1. **Python 3.10+** from https://www.python.org/downloads/
+1. **Python 3.12** from https://www.python.org/downloads/
+   - Download Python 3.12.x (not 3.13 or 3.14)
    - Check "Add Python to PATH" during installation
    - Verify: `python --version`
 

@@ -5,21 +5,21 @@ You're encountering an error installing pydantic-core because Python 3.14 is too
 
 ## Solutions
 
-### Option 1: Use Python 3.13 (Recommended)
+### Option 1: Use Python 3.12 (Recommended)
 
 1. **Uninstall Python 3.14**
    - Go to Control Panel > Programs > Uninstall a program
    - Find Python 3.14 and uninstall it
 
-2. **Install Python 3.13**
-   - Download from: https://www.python.org/downloads/release/python-3139/
+2. **Install Python 3.12**
+   - Download from: https://www.python.org/downloads/release/python-31211/
    - Choose "Windows installer (64-bit)"
    - During installation, check "Add Python to PATH"
 
 3. **Verify installation**
    ```powershell
    python --version
-   # Should show: Python 3.13.x
+   # Should show: Python 3.12.x
    ```
 
 4. **Reinstall dependencies**
@@ -71,6 +71,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ## Best Practice
 
 For production servers, use stable Python versions:
-- Python 3.13 (latest stable)
-- Python 3.12 (LTS-like stability)
-- Python 3.11 (mature and well-supported)
+- **Python 3.12** (recommended - best balance of features and stability)
+- Python 3.11 (alternative - mature and well-supported)
+- Avoid Python 3.13+ until packages have better support
