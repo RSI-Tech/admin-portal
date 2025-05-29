@@ -73,12 +73,32 @@ export default function UserForm({ mode, userKey }: UserFormProps) {
     setSaving(true);
 
     try {
+      // Filter out system-generated fields for updates
+      const systemFields = [
+        'USER_KEY', 'UPDATED_DATE', 'EFFECTIVE_BEGIN_DT', 'EFFECTIVE_END_DT',
+        'PASSWORD_CHANGED_DATE', 'LOGGED_IN_FLAG', 'OVERRIDE_PROHIBIT_FLAG',
+        'IGNORE_LOGIN_DATE', 'LAST_LOGIN_CLIENT', 'LAST_LOGIN_IP_ADDRESS',
+        'LAST_LOGIN_DATE', 'LAST_LOCAL_SYNC_DATE', 'LAST_CENTRAL_SYNC_DATE',
+        'LEGACY_ID', 'CUSTOM_SID', 'DEFAULT_PRINTER_CODE'
+      ];
+
+      // Also filter out user attribute fields that are system-managed
+      for (let i = 1; i <= 10; i++) {
+        systemFields.push(
+          `USER_ATTR_TYPE_${i}`, `USER_ATTR_VALUE_${i}`,
+          `USER_ATTR_EFF_BEGIN_DT_${i}`, `USER_ATTR_EFF_END_DT_${i}`
+        );
+      }
+
+      const cleanedData = { ...formData };
+      systemFields.forEach(field => delete cleanedData[field]);
+
       if (mode === 'create') {
-        await userApi.createUser(formData);
+        await userApi.createUser(cleanedData);
         setSuccess('User created successfully!');
         setTimeout(() => navigate('/'), 2000);
       } else {
-        await userApi.updateUser(userKey!, formData);
+        await userApi.updateUser(userKey!, cleanedData);
         setSuccess('User updated successfully!');
         setTimeout(() => navigate('/'), 2000);
       }

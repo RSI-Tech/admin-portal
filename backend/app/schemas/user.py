@@ -132,7 +132,7 @@ class UserUpdate(BaseModel):
     ENABLE_MFA: Optional[str] = Field(None, max_length=1)
     
     class Config:
-        extra = "forbid"  # Don't allow extra fields
+        extra = "ignore"  # Ignore extra fields instead of forbidding them
 
 
 class User(UserBase):
@@ -140,12 +140,76 @@ class User(UserBase):
     USER_KEY: int
     UPDATED_DATE: Optional[datetime] = None
     EFFECTIVE_BEGIN_DT: Optional[datetime] = None
+    EFFECTIVE_END_DT: Optional[datetime] = None
     PASSWORD_CHANGED_DATE: Optional[datetime] = None
     LOGGED_IN_FLAG: Optional[str] = None
     OVERRIDE_PROHIBIT_FLAG: Optional[str] = None
     IGNORE_LOGIN_DATE: Optional[Union[datetime, str]] = None
     
-    @field_validator("UPDATED_DATE", "EFFECTIVE_BEGIN_DT", "PASSWORD_CHANGED_DATE", mode='before')
+    # Additional database fields
+    LAST_LOGIN_CLIENT: Optional[str] = None
+    LAST_LOGIN_IP_ADDRESS: Optional[str] = None
+    LAST_LOGIN_DATE: Optional[datetime] = None
+    LAST_LOCAL_SYNC_DATE: Optional[datetime] = None
+    LAST_CENTRAL_SYNC_DATE: Optional[datetime] = None
+    LEGACY_ID: Optional[str] = None
+    CUSTOM_SID: Optional[str] = None
+    DEFAULT_PRINTER_CODE: Optional[str] = None
+    
+    # User attributes (10 sets)
+    USER_ATTR_TYPE_1: Optional[str] = None
+    USER_ATTR_VALUE_1: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_1: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_1: Optional[datetime] = None
+    USER_ATTR_TYPE_2: Optional[str] = None
+    USER_ATTR_VALUE_2: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_2: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_2: Optional[datetime] = None
+    USER_ATTR_TYPE_3: Optional[str] = None
+    USER_ATTR_VALUE_3: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_3: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_3: Optional[datetime] = None
+    USER_ATTR_TYPE_4: Optional[str] = None
+    USER_ATTR_VALUE_4: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_4: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_4: Optional[datetime] = None
+    USER_ATTR_TYPE_5: Optional[str] = None
+    USER_ATTR_VALUE_5: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_5: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_5: Optional[datetime] = None
+    USER_ATTR_TYPE_6: Optional[str] = None
+    USER_ATTR_VALUE_6: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_6: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_6: Optional[datetime] = None
+    USER_ATTR_TYPE_7: Optional[str] = None
+    USER_ATTR_VALUE_7: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_7: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_7: Optional[datetime] = None
+    USER_ATTR_TYPE_8: Optional[str] = None
+    USER_ATTR_VALUE_8: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_8: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_8: Optional[datetime] = None
+    USER_ATTR_TYPE_9: Optional[str] = None
+    USER_ATTR_VALUE_9: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_9: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_9: Optional[datetime] = None
+    USER_ATTR_TYPE_10: Optional[str] = None
+    USER_ATTR_VALUE_10: Optional[str] = None
+    USER_ATTR_EFF_BEGIN_DT_10: Optional[datetime] = None
+    USER_ATTR_EFF_END_DT_10: Optional[datetime] = None
+    
+    @field_validator("UPDATED_DATE", "EFFECTIVE_BEGIN_DT", "EFFECTIVE_END_DT", "PASSWORD_CHANGED_DATE", 
+                      "LAST_LOGIN_DATE", "LAST_LOCAL_SYNC_DATE", "LAST_CENTRAL_SYNC_DATE",
+                      "USER_ATTR_EFF_BEGIN_DT_1", "USER_ATTR_EFF_END_DT_1",
+                      "USER_ATTR_EFF_BEGIN_DT_2", "USER_ATTR_EFF_END_DT_2",
+                      "USER_ATTR_EFF_BEGIN_DT_3", "USER_ATTR_EFF_END_DT_3",
+                      "USER_ATTR_EFF_BEGIN_DT_4", "USER_ATTR_EFF_END_DT_4",
+                      "USER_ATTR_EFF_BEGIN_DT_5", "USER_ATTR_EFF_END_DT_5",
+                      "USER_ATTR_EFF_BEGIN_DT_6", "USER_ATTR_EFF_END_DT_6",
+                      "USER_ATTR_EFF_BEGIN_DT_7", "USER_ATTR_EFF_END_DT_7",
+                      "USER_ATTR_EFF_BEGIN_DT_8", "USER_ATTR_EFF_END_DT_8",
+                      "USER_ATTR_EFF_BEGIN_DT_9", "USER_ATTR_EFF_END_DT_9",
+                      "USER_ATTR_EFF_BEGIN_DT_10", "USER_ATTR_EFF_END_DT_10", mode='before')
     @classmethod
     def parse_dates(cls, v):
         """Handle datetime fields"""
