@@ -226,12 +226,9 @@ $webConfig = @'
 
     <!-- Static Content Configuration -->
     <staticContent>
-      <!-- Vite/React specific MIME types -->
+      <!-- Only add MIME types that aren't already defined in IIS -->
+      <remove fileExtension=".webmanifest" />
       <mimeMap fileExtension=".webmanifest" mimeType="application/manifest+json" />
-      <mimeMap fileExtension=".woff2" mimeType="font/woff2" />
-      <mimeMap fileExtension=".js" mimeType="application/javascript" />
-      <mimeMap fileExtension=".css" mimeType="text/css" />
-      <mimeMap fileExtension=".json" mimeType="application/json" />
     </staticContent>
 
     <!-- HTTP Headers for Performance -->
@@ -422,8 +419,8 @@ $webConfig = @'
       </rules>
     </rewrite>
     <staticContent>
+      <remove fileExtension=".webmanifest" />
       <mimeMap fileExtension=".webmanifest" mimeType="application/manifest+json" />
-      <mimeMap fileExtension=".woff2" mimeType="font/woff2" />
     </staticContent>
     <defaultDocument>
       <files>
