@@ -1,6 +1,6 @@
 import pyodbc
 from contextlib import contextmanager
-from typing import Generator, Dict, Any
+from typing import Generator, Dict, Any, Optional
 import logging
 from app.config import settings
 
@@ -12,12 +12,44 @@ class DatabaseConnection:
     
     def __init__(self):
         self._connection_cache = {}
+        self._driver_name = self._detect_sql_driver()
+        
+    def _detect_sql_driver(self) -> Optional[str]:
+        """Detect available SQL Server ODBC driver"""
+        drivers = pyodbc.drivers()
+        
+        # Preferred drivers in order
+        preferred_drivers = [
+            "ODBC Driver 18 for SQL Server",
+            "ODBC Driver 17 for SQL Server",
+            "ODBC Driver 13 for SQL Server",
+            "SQL Server Native Client 11.0",
+            "SQL Server"
+        ]
+        
+        for driver in preferred_drivers:
+            if driver in drivers:
+                logger.info(f"Using ODBC driver: {driver}")
+                return driver
+                
+        # If no preferred driver found, try any SQL Server driver
+        for driver in drivers:
+            if "SQL Server" in driver:
+                logger.warning(f"Using fallback driver: {driver}")
+                return driver
+                
+        logger.error("No SQL Server ODBC driver found!")
+        logger.error(f"Available drivers: {drivers}")
+        return None
         
     def _create_connection_string(self, config: Dict[str, Any]) -> str:
         """Create ODBC connection string"""
+        if not self._driver_name:
+            raise RuntimeError("No SQL Server ODBC driver found. Please install ODBC Driver 17 for SQL Server.")
+            
         # Base connection parameters
         conn_str_parts = [
-            f"DRIVER={{ODBC Driver 17 for SQL Server}}",
+            f"DRIVER={{{self._driver_name}}}",
             f"SERVER={config['server']}",
             f"DATABASE={config['database']}"
         ]
@@ -39,6 +71,8 @@ class DatabaseConnection:
         if "options" in config:
             if config["options"].get("trustServerCertificate", False):
                 conn_str_parts.append("TrustServerCertificate=yes")
+            if config["options"].get("encrypt", False):
+                conn_str_parts.append("Encrypt=yes")
                 
         return ";".join(conn_str_parts)
         
@@ -47,16 +81,24 @@ class DatabaseConnection:
         connection_string = self._create_connection_string(config)
         
         logger.info(f"Connecting to database: {config['server']}/{config['database']}")
+        logger.debug(f"Using driver: {self._driver_name}")
         
-        # Create connection with row factory for dict-like access
-        conn = pyodbc.connect(connection_string)
-        
-        # Configure connection for better compatibility
-        conn.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
-        conn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
-        conn.setencoding(encoding='utf-8')
-        
-        return conn
+        try:
+            # Create connection with row factory for dict-like access
+            conn = pyodbc.connect(connection_string, timeout=30)
+            
+            # Configure connection for better compatibility
+            conn.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
+            conn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+            conn.setencoding(encoding='utf-8')
+            
+            return conn
+        except pyodbc.Error as e:
+            logger.error(f"Failed to connect: {e}")
+            if "IM002" in str(e):
+                logger.error("ODBC Driver not found. Please install 'ODBC Driver 17 for SQL Server'")
+                logger.error("Download from: https://go.microsoft.com/fwlink/?linkid=2249004")
+            raise
     
     @contextmanager
     def get_db(self) -> Generator[pyodbc.Connection, None, None]:

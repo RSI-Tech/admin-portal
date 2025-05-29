@@ -1,35 +1,101 @@
 ---
-description: Rules for working with the React project in the /frontend folder
-globs: fastapi_react_app/frontend/**/*
-alwaysApply: false
+description: Rules for working with the React frontend in the /frontend folder
+globs: frontend/**/*
+alwaysApply: true
 ---
-This project should use the modern, concise, and best practices for building React 18+ with TypeScript
+This project should use modern, concise, and best practices for building React 18+ with TypeScript
 
 # Primary Libraries
 
-See [package.json](mdc:fastapi_react_app/frontend/package.json) for the specific libraries and versions you should use!
-When making recommendations, make sure you are referencing the correct verions! Double check your work.
+- React 18.3.1 with TypeScript
+- React Router 7.1.1 for routing
+- Tailwind CSS 3.4.17 for styling (v3, not v4)
+- Axios 1.7.9 for API calls
+- Lucide React 0.468.0 for icons
+- Vite 6.0.6 for build tooling
+- shadcn/ui components (already installed)
 
-- Mantine (the latest version, >= v.7) for the UI
-- Tailwind CSS (the latest version, >= v.4) for styling if you can't do this with Mantine (always prefer Mantine)
-- TanStack Router
-- TanStack Query
-- Zustand, 
-- react-hook-form
-- Zod
-- automatic generation of typescript types for my OpenAPI compatible fastAPI backend in `../backend.py`
+# Project Context
+
+This is a user management portal migrated from Next.js to React + FastAPI:
+- All styling and UI must remain exactly as in the Next.js version
+- Components use shadcn/ui (already configured)
+- API calls go to FastAPI backend at /api/*
+- Multi-environment support (dev, int, test, prod)
 
 # Rules
 
-- Use TypeScript for all code. Prefer interfaces over types. Avoid enums, use const objects or maps.
-- Use recommended practices routing with TanStack Router
-- Prefer using just Mantine for the UI but also apply tailwind CSS as needed.
-- Implement responsive, mobile-first design with Mantine.
-- Use lowercase with dashes for directories (e.g., components/auth-wizard).
-- Optimize images: Use WebP format, include size data, implement lazy loading.
-- Use Zustand for state management.
-- Use Zod for form validation and input schema definition.
-- Use fetch API, Axios, or TanStack Query (React Query) for data fetching where appropriate
-- Implement error boundaries using error.tsx and global-error.tsx files.
-- Ensure all components meet WCAG 2.1 AA standards.
-- Use Prettier for consistent code formatting.
+## General
+- Use TypeScript for all code
+- Prefer interfaces over types
+- Avoid enums, use const objects instead
+- Use functional components with hooks
+- No class components
+
+## File Structure
+- Use lowercase with dashes for directories (e.g., components/user-form)
+- Component files use PascalCase (e.g., UserForm.tsx)
+- Keep components focused and single-purpose
+- Co-locate related files (component, styles, tests)
+
+## Routing
+- Use React Router v7 with createBrowserRouter
+- Base path is /admin-portal
+- Implement lazy loading for route components
+- Handle 404 and error states
+
+## Styling
+- Use Tailwind CSS v3 (not v4) for all styling
+- Follow existing design patterns from Next.js version
+- Maintain consistent spacing and typography
+- Use shadcn/ui components where applicable
+- No additional UI libraries without approval
+
+## API Integration
+- Use Axios for all API calls
+- Centralize API configuration in api.ts
+- Handle loading and error states properly
+- Type all API responses with TypeScript interfaces
+- Use proper error handling with try/catch
+
+## State Management
+- Use React hooks for local state
+- Context API for global state if needed
+- No external state management libraries initially
+
+## Forms
+- Use controlled components
+- Implement proper validation
+- Show error messages clearly
+- Handle submit states (loading, success, error)
+
+## Code Quality
+- Use Prettier for formatting
+- Follow ESLint rules
+- Write self-documenting code
+- Add comments only when necessary
+- Keep functions under 50 lines
+
+## Performance
+- Implement code splitting with lazy()
+- Optimize re-renders with memo/useMemo/useCallback
+- Lazy load images where appropriate
+- Minimize bundle size
+
+## Testing
+- Write unit tests for utilities
+- Test API integration
+- Ensure components render correctly
+- Mock API calls in tests
+
+## Accessibility
+- Use semantic HTML
+- Include proper ARIA labels
+- Ensure keyboard navigation works
+- Test with screen readers
+
+## Security
+- Sanitize user inputs
+- Don't store sensitive data in localStorage
+- Use HTTPS for all API calls
+- Implement proper CORS handling

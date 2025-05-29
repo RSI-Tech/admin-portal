@@ -1,0 +1,44 @@
+{
+  "dev": {
+    "server": "dor9vd-sqis001.kydev.dev.ky.gov,1961",
+    "database": "DEVRPEDB",
+    "user": "e-faisal.sajjad",
+    "password": "your_password_here",
+    "domain": "EAS",
+    "options": {
+      "trustServerCertificate": true,
+      "encrypt": true
+    }
+  },
+  "sbx": {
+    "server": "dor9vd-sqis001.kydev.dev.ky.gov,1961",
+    "database": "SBXRPEDB",
+    "user": "e-faisal.sajjad",
+    "password": "your_password_here",
+    "domain": "EAS",
+    "options": {
+      "trustServerCertificate": true,
+      "encrypt": true
+    }
+  },
+  "test": {
+    "server": "test-server",
+    "database": "TESTRPEDB",
+    "user": "e-faisal.sajjad",
+    "password": "your_password_here",
+    "domain": "EAS",
+    "options": {
+      "trustServerCertificate": true
+    }
+  },
+  "prod": {
+    "server": "prod-server",
+    "database": "PRODRPEDB",
+    "user": "e-faisal.sajjad",
+    "password": "your_password_here",
+    "domain": "EAS",
+    "options": {
+      "trustServerCertificate": true
+    }
+  }
+}
