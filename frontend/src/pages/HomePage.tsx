@@ -12,20 +12,35 @@ interface User {
   EMAIL_ADDRESS?: string;
 }
 
+interface FilterState {
+  status: string | null;
+  user_type: string | null;
+}
+
 export default function HomePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    status: null,
+    user_type: null,
+  });
 
   useEffect(() => {
     loadUsers();
   }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = async (searchTerm = search, currentFilters = filters) => {
     try {
       setLoading(true);
-      const data = await userApi.getUsers();
+      const params: any = {};
+      
+      if (searchTerm) params.search = searchTerm;
+      if (currentFilters.status) params.status = currentFilters.status;
+      if (currentFilters.user_type) params.user_type = currentFilters.user_type;
+      
+      const data = await userApi.getUsers(params);
       setUsers(data.users);
     } catch (err) {
       setError('Failed to load users');
@@ -37,16 +52,30 @@ export default function HomePage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setLoading(true);
-      const data = await userApi.getUsers({ search });
-      setUsers(data.users);
-    } catch (err) {
-      setError('Search failed');
-    } finally {
-      setLoading(false);
-    }
+    loadUsers(search, filters);
   };
+
+  const handleQuickFilter = (type: 'status' | 'user_type', value: string) => {
+    const newFilters = { ...filters };
+    
+    // Toggle filter: if same value is clicked, remove it; otherwise set it
+    if (newFilters[type] === value) {
+      newFilters[type] = null;
+    } else {
+      newFilters[type] = value;
+    }
+    
+    setFilters(newFilters);
+    loadUsers(search, newFilters);
+  };
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setFilters({ status: null, user_type: null });
+    loadUsers('', { status: null, user_type: null });
+  };
+
+  const hasActiveFilters = search || filters.status || filters.user_type;
 
   const handleStatusToggle = async (userKey: number, currentStatus: string) => {
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
@@ -98,7 +127,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-4">
         <form onSubmit={handleSearch} className="flex gap-4">
           <input
             type="text"
@@ -110,19 +139,71 @@ export default function HomePage() {
           <button type="submit" className="btn-primary">
             Search
           </button>
-          {search && (
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearch('');
-                loadUsers();
-              }}
+              onClick={clearAllFilters}
               className="btn-secondary"
             >
-              Clear
+              Clear All
             </button>
           )}
         </form>
+        
+        {/* Quick Filter Buttons */}
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm font-medium text-gray-700 self-center">Quick filters:</span>
+          
+          {/* Status Filters */}
+          <button
+            type="button"
+            onClick={() => handleQuickFilter('status', 'Active')}
+            className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+              filters.status === 'Active'
+                ? 'bg-green-100 text-green-800 border-green-300'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Active Users
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => handleQuickFilter('status', 'Inactive')}
+            className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+              filters.status === 'Inactive'
+                ? 'bg-red-100 text-red-800 border-red-300'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Inactive Users
+          </button>
+          
+          {/* User Type Filters */}
+          <button
+            type="button"
+            onClick={() => handleQuickFilter('user_type', 'SYSTEM')}
+            className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+              filters.user_type === 'SYSTEM'
+                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            SYSTEM Users
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => handleQuickFilter('user_type', 'INTRANET')}
+            className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+              filters.user_type === 'INTRANET'
+                ? 'bg-purple-100 text-purple-800 border-purple-300'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            INTRANET Users
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 flow-root">
