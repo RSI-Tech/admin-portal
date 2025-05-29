@@ -6,8 +6,11 @@ import DuplicateUserPage from './pages/DuplicateUserPage';
 import Layout from './components/Layout';
 
 function App() {
+  // Remove basename for development, can be configured via env variable for production
+  const basename = import.meta.env.BASE_URL || '/';
+  
   return (
-    <Router basename="/admin-portal">
+    <Router basename={basename}>
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
