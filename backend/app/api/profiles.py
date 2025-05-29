@@ -66,7 +66,7 @@ async def get_user_profiles(
         query = """
         SELECT PROFILE_ID, UPDATED_DATE, UPDATED_BY
         FROM USER_TO_PROFILE
-        WHERE USER_KEY = %s
+        WHERE USER_KEY = ?
         ORDER BY PROFILE_ID
         """
         

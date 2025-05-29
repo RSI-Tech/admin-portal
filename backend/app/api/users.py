@@ -208,7 +208,7 @@ async def update_user(
         UPDATE USERS
         SET {', '.join(set_clauses)}
         OUTPUT INSERTED.*
-        WHERE USER_KEY = %s
+        WHERE USER_KEY = ?
         """
         
         values = list(update_data.values()) + [user_key]
