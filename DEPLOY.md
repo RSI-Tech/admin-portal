@@ -102,7 +102,7 @@ Create `connection.json` in the backend directory:
 
 ```powershell
 # Install the FastAPI backend as a Windows Service
-nssm install AdminPortalBackend "E:\admin-portal\backend\venv\Scripts\python.exe" "-m" "uvicorn" "app.main:app" "--host" "0.0.0.0" "--port" "8000"
+nssm install AdminPortalBackend "E:\admin-portal\backend\venv\Scripts\python.exe" "-m" "uvicorn" "app.main:app" "--host" "0.0.0.0" "--port" "8011"
 
 # Configure service settings
 nssm set AdminPortalBackend AppDirectory "E:\admin-portal\backend"
@@ -233,19 +233,19 @@ $webConfig = @'
         <!-- API Proxy: Forward /admin-portal/api/* to FastAPI backend -->
         <rule name="APIProxy" stopProcessing="true">
           <match url="^api/(.*)" />
-          <action type="Rewrite" url="http://localhost:8000/api/{R:1}" />
+          <action type="Rewrite" url="http://localhost:8011/api/{R:1}" />
         </rule>
         
         <!-- Docs Proxy: Forward /admin-portal/docs to FastAPI docs -->
         <rule name="DocsProxy" stopProcessing="true">
           <match url="^docs$" />
-          <action type="Rewrite" url="http://localhost:8000/docs" />
+          <action type="Rewrite" url="http://localhost:8011/docs" />
         </rule>
         
         <!-- OpenAPI Proxy: Forward /admin-portal/openapi.json to FastAPI -->
         <rule name="OpenAPIProxy" stopProcessing="true">
           <match url="^openapi\.json$" />
-          <action type="Rewrite" url="http://localhost:8000/openapi.json" />
+          <action type="Rewrite" url="http://localhost:8011/openapi.json" />
         </rule>
         
         <!-- SPA Fallback: Everything else goes to React app -->
@@ -306,7 +306,7 @@ New-NetFirewallRule -DisplayName "Admin Portal HTTP" -Direction Inbound -Protoco
 New-NetFirewallRule -DisplayName "Admin Portal HTTPS" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow
 
 # Allow backend service port (for internal communication)
-New-NetFirewallRule -DisplayName "Admin Portal Backend" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow
+New-NetFirewallRule -DisplayName "Admin Portal Backend" -Direction Inbound -Protocol TCP -LocalPort 8011 -Action Allow
 ```
 
 ## Step 7: Test Deployment
@@ -318,7 +318,7 @@ Get-Service AdminPortalBackend
 nssm status AdminPortalBackend
 
 # Test API directly
-Invoke-RestMethod -Uri "http://localhost:8000/docs" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8011/docs" -Method Get
 ```
 
 ### Test IIS Sub-Application
@@ -333,7 +333,7 @@ Invoke-RestMethod -Uri "http://localhost/admin-portal/api/environment" -Method G
 ### Access the Application
 - **Main Application**: `http://yourserver/admin-portal/`
 - **API Documentation**: `http://yourserver/admin-portal/docs`
-- **Direct Backend** (internal): `http://localhost:8000/docs`
+- **Direct Backend** (internal): `http://localhost:8011/docs`
 
 ## Step 8: SSL Configuration (Production)
 
@@ -399,7 +399,7 @@ npm run build
 
 # Setup NSSM service
 nssm remove AdminPortalBackend confirm
-nssm install AdminPortalBackend "$InstallPath\backend\venv\Scripts\python.exe" "-m" "uvicorn" "app.main:app" "--host" "0.0.0.0" "--port" "8000"
+nssm install AdminPortalBackend "$InstallPath\backend\venv\Scripts\python.exe" "-m" "uvicorn" "app.main:app" "--host" "0.0.0.0" "--port" "8011"
 nssm set AdminPortalBackend AppDirectory "$InstallPath\backend"
 nssm set AdminPortalBackend AppEnvironmentExtra "PYTHONPATH=$InstallPath\backend"
 nssm set AdminPortalBackend Start SERVICE_AUTO_START
@@ -437,15 +437,15 @@ $webConfig = @'
       <rules>
         <rule name="APIProxy" stopProcessing="true">
           <match url="^api/(.*)" />
-          <action type="Rewrite" url="http://localhost:8000/api/{R:1}" />
+          <action type="Rewrite" url="http://localhost:8011/api/{R:1}" />
         </rule>
         <rule name="DocsProxy" stopProcessing="true">
           <match url="^docs$" />
-          <action type="Rewrite" url="http://localhost:8000/docs" />
+          <action type="Rewrite" url="http://localhost:8011/docs" />
         </rule>
         <rule name="OpenAPIProxy" stopProcessing="true">
           <match url="^openapi\.json$" />
-          <action type="Rewrite" url="http://localhost:8000/openapi.json" />
+          <action type="Rewrite" url="http://localhost:8011/openapi.json" />
         </rule>
         <rule name="ReactRoutes" stopProcessing="true">
           <match url=".*" />
@@ -521,7 +521,7 @@ Get-Content "E:\admin-portal\backend\logs\service-error.log" -Tail 50
 # Test manual startup
 cd E:\admin-portal\backend
 .\venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8011
 ```
 
 ### Frontend Static File Issues
@@ -541,7 +541,7 @@ robocopy "dist" "C:\inetpub\wwwroot\admin-portal" /E /MIR
 ### API Proxy Issues
 ```powershell
 # Test backend directly
-Invoke-RestMethod -Uri "http://localhost:8000/docs" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8011/docs" -Method Get
 
 # Test through IIS proxy
 Invoke-RestMethod -Uri "http://localhost/admin-portal/api/environment" -Method Get
