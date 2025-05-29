@@ -1,6 +1,6 @@
 # IIS Sub-Application Deployment Guide - Windows Server 2019
 
-This guide provides step-by-step instructions for deploying the Admin Portal as a sub-application under IIS Default Website.
+This guide provides step-by-step instructions for deploying the Admin Portal (FastAPI backend + React frontend) as a sub-application under IIS Default Website.
 
 ## Prerequisites
 
@@ -11,7 +11,8 @@ This guide provides step-by-step instructions for deploying the Admin Portal as 
 - Internet connectivity for package downloads
 
 ### Required Software
-- **Node.js 18.x or later**
+- **Python 3.12** - For FastAPI backend
+- **Node.js 18.x or later** - For React frontend build
 - **SQL Server 2019** - Already installed with your database
 - **IIS (Internet Information Services)**
 - **Git** - For code deployment
@@ -26,7 +27,7 @@ Open PowerShell as Administrator and run:
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
 # Install required software
-choco install nodejs-lts git urlrewrite sqlserver-cmdlineutils -y
+choco install python nodejs-lts git urlrewrite sqlserver-cmdlineutils -y
 
 # Enable IIS and required features
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole, IIS-WebServer, IIS-CommonHttpFeatures, IIS-HttpErrors, IIS-HttpRedirect, IIS-ApplicationDevelopment, IIS-NetFxExtensibility45, IIS-HealthAndDiagnostics, IIS-HttpLogging, IIS-Security, IIS-RequestFiltering, IIS-Performance, IIS-WebServerManagementTools, IIS-IIS6ManagementCompatibility, IIS-Metabase, IIS-ManagementConsole, IIS-BasicAuthentication, IIS-WindowsAuthentication, IIS-StaticContent, IIS-DefaultDocument, IIS-DirectoryBrowsing -All
@@ -37,6 +38,7 @@ refreshenv
 
 Verify installations:
 ```powershell
+python --version
 node --version
 npm --version
 git --version
@@ -64,16 +66,20 @@ icacls "E:\admin-portal" /grant "IIS_IUSRS:(OI)(CI)F" /T
 ## Step 3: Configure Application
 
 ### Install Dependencies and Build
+
 ```powershell
 cd E:\admin-portal
+
+# Install Python backend dependencies
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# Install and build React frontend
+cd frontend
 npm install
-
-# Set environment variable for sub-application deployment
-$env:DEPLOY_AS_SUBAPP = "true"
-$env:NODE_ENV = "production"
-
-# Build the application
 npm run build
+cd ..
 ```
 
 ### Create Database Configuration
@@ -167,8 +173,13 @@ $webConfig = @'
           </conditions>
           <action type="None" />
         </rule>
-        <!-- Proxy dynamic requests to Node.js -->
-        <rule name="ProxyToNode" stopProcessing="true">
+        <!-- Proxy API requests to FastAPI backend -->
+        <rule name="APIProxy" stopProcessing="true">
+          <match url="^(api|docs|openapi\.json)" />
+          <action type="Rewrite" url="http://localhost:8000/{R:0}" />
+        </rule>
+        <!-- Serve React app for all other requests -->
+        <rule name="ReactApp" stopProcessing="true">
           <match url="(.*)" />
           <conditions>
             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
@@ -207,21 +218,31 @@ Create `ecosystem.config.js` in the application root:
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'admin-portal',
-    script: 'node_modules\\next\\dist\\bin\\next',
-    args: 'start',
-    cwd: 'E:\\admin-portal',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000,
-      DEPLOY_AS_SUBAPP: 'true'
+  apps: [
+    {
+      name: 'admin-portal-backend',
+      script: 'python',
+      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+      cwd: 'E:\\admin-portal\\backend',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        PYTHONPATH: 'E:\\admin-portal\\backend'
+      }
+    },
+    {
+      name: 'admin-portal-frontend',
+      script: 'npx',
+      args: 'serve -s dist -l 3000',
+      cwd: 'E:\\admin-portal\\frontend',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '512M'
     }
-  }]
+  ]
 };
 ```
 
@@ -243,20 +264,28 @@ New-NetFirewallRule -DisplayName "Admin Portal" -Direction Inbound -Protocol TCP
 
 ## Step 7: Test Deployment
 
-1. **Test Node.js Application**:
+1. **Test FastAPI Backend**:
    ```powershell
-   cd E:\admin-portal
-   npm start
+   cd E:\admin-portal\backend
+   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+   Access: `http://localhost:8000/docs`
+
+2. **Test React Frontend**:
+   ```powershell
+   cd E:\admin-portal\frontend
+   npx serve -s dist -l 3000
    ```
    Access: `http://localhost:3000`
 
-2. **Test IIS Sub-Application**:
+3. **Test IIS Sub-Application**:
    Access: `http://yourserver/admin-portal`
 
-3. **Verify PM2 Service**:
+4. **Verify PM2 Service**:
    ```powershell
    pm2 status
-   pm2 logs admin-portal
+   pm2 logs admin-portal-backend
+   pm2 logs admin-portal-frontend
    ```
 
 ## Automated Deployment Script
@@ -279,7 +308,7 @@ if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
 }
 
 # Install required software
-choco install nodejs-lts git urlrewrite -y
+choco install python nodejs-lts git urlrewrite -y
 
 # Enable IIS features
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole, IIS-WebServer, IIS-CommonHttpFeatures, IIS-HttpErrors, IIS-HttpRedirect, IIS-ApplicationDevelopment, IIS-NetFxExtensibility45, IIS-HealthAndDiagnostics, IIS-HttpLogging, IIS-Security, IIS-RequestFiltering, IIS-Performance, IIS-WebServerManagementTools, IIS-ManagementConsole, IIS-StaticContent, IIS-DefaultDocument, IIS-DirectoryBrowsing -All
@@ -299,10 +328,17 @@ icacls "$InstallPath" /grant "IIS_IUSRS:(OI)(CI)F" /T
 
 # Install dependencies and build
 cd $InstallPath
+
+# Install Python backend dependencies
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# Install and build React frontend
+cd frontend
 npm install
-$env:DEPLOY_AS_SUBAPP = "true"
-$env:NODE_ENV = "production"
 npm run build
+cd ..
 
 # Install PM2
 npm install -g pm2 pm2-windows-service
@@ -369,21 +405,31 @@ Set-Content -Path (Join-Path $InstallPath "web.config") -Value $webConfigContent
 # Create PM2 ecosystem config
 $ecosystemContent = @"
 module.exports = {
-  apps: [{
-    name: 'admin-portal',
-    script: 'node_modules\\\\next\\\\dist\\\\bin\\\\next',
-    args: 'start',
-    cwd: '$($InstallPath -replace "\\", "\\\\")',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000,
-      DEPLOY_AS_SUBAPP: 'true'
+  apps: [
+    {
+      name: 'admin-portal-backend',
+      script: 'python',
+      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+      cwd: '$($InstallPath -replace "\\", "\\\\")\\\\backend',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        PYTHONPATH: '$($InstallPath -replace "\\", "\\\\")\\\\backend'
+      }
+    },
+    {
+      name: 'admin-portal-frontend',
+      script: 'npx',
+      args: 'serve -s dist -l 3000',
+      cwd: '$($InstallPath -replace "\\", "\\\\")\\\\frontend',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '512M'
     }
-  }]
+  ]
 };
 "@
 
@@ -428,8 +474,18 @@ If CSS/JS files return 404 errors:
 
 ### Application Won't Start
 1. **Check PM2 status**: `pm2 status`
-2. **View logs**: `pm2 logs admin-portal`
-3. **Test without PM2**: `npm start`
+2. **View backend logs**: `pm2 logs admin-portal-backend`
+3. **View frontend logs**: `pm2 logs admin-portal-frontend`
+4. **Test backend without PM2**: 
+   ```powershell
+   cd E:\admin-portal\backend
+   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+5. **Test frontend without PM2**:
+   ```powershell
+   cd E:\admin-portal\frontend
+   npx serve -s dist -l 3000
+   ```
 
 ### IIS Sub-Application Not Accessible
 1. **Verify application pool is running**:
