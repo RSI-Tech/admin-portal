@@ -17,7 +17,7 @@ interface FilterState {
   user_type: string | null;
 }
 
-export default function HomePage() {
+export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
